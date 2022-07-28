@@ -164,6 +164,9 @@ function ab2str(buf, apply) {
     }
   }
   // Firefox 3.6 nor iOS devices can use ArrayBuffers with .apply
+  // the maximum size of uintbuf will be limited by the stack size
+  // https://stackoverflow.com/questions/49123222/converting-array-buffer-to-string-maximum-call-stack-size-exceeded
+  // so we may want to convert to TextDecoder or some other method down the road
   if (ab2str._applySupportsTypedArray) {
     return String.fromCharCode.apply(null, uintbuf);
   } else {
