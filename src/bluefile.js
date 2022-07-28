@@ -345,20 +345,20 @@ class BlueHeader {
     const dic_index = {};
     const dict_keywords = {};
     let ii = 0;
-    buf = buf.slice(offset, offset+lbuf);
-    const dvhdr = new DataView(buf);
-    buf = ab2str(buf);
+    let temp_buf = buf.slice(offset, offset+lbuf);
+    const dvhdr = new DataView(temp_buf);
+    let str_val = ab2str(temp_buf);
     while (ii < lbuf) {
       idata = ii + 8;
       lkey = dvhdr.getUint32(ii, littleEndian);
       lextra = dvhdr.getInt16(ii + 4, littleEndian);
       ltag = dvhdr.getInt8(ii + 6);
-      format = buf.slice(ii + 7, ii + 8);
+      format = str_val.slice(ii + 7, ii + 8);
       ldata = lkey - lextra;
       itag = idata + ldata;
-      tag = buf.slice(itag, itag + ltag);
+      tag = str_val.slice(itag, itag + ltag);
       if (format === 'A') {
-        data = buf.slice(idata, idata + ldata);
+        data = str_val.slice(idata, idata + ldata);
       } else if (BlueHeader._XM_TO_DATAVIEW[format]) {
         let parseFunc = BlueHeader._XM_TO_DATAVIEW[format];
         if (typeof parseFunc === 'string') {
