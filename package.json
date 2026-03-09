@@ -6,16 +6,20 @@
   "homepage": "https://lgsinnovations.github.io/sigfile",
   "main": "dist/sigfile.js",
   "module": "dist/sigfile.mjs",
+  "types": "types/sigfile.d.ts",
   "exports": {
     ".": {
+      "types": "./types/sigfile.d.ts",
       "import": "./dist/sigfile.mjs",
       "require": "./dist/sigfile.js"
     },
     "./bluefile": {
+      "types": "./types/bluefile.d.ts",
       "import": "./dist/bluefile.mjs",
       "require": "./dist/bluefile.js"
     },
     "./matfile": {
+      "types": "./types/matfile.d.ts",
       "import": "./dist/matfile.mjs",
       "require": "./dist/matfile.js"
     }
@@ -24,7 +28,8 @@
     "node": ">=18"
   },
   "files": [
-    "dist"
+    "dist",
+    "types"
   ],
   "author": {
     "name": "LGS Innovations, Inc.",
