@@ -24,6 +24,6 @@
  */
 import * as bluefile from './bluefile';
 import * as matfile from './matfile';
-import { version } from '../package';
+import { version } from '../package.json';
 
 export { bluefile, matfile, version };
