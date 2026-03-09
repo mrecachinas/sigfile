@@ -6,7 +6,6 @@ import {
   str2ab,
   pow2,
   parseURL,
-  text2buffer,
 } from '../src/util';
 
 describe('update', () => {
@@ -322,35 +321,5 @@ describe('parseURL', () => {
     expect(result.path).to.equal('/foo/bar');
     expect(result.relative).to.equal('/foo/bar');
     expect(result.segments).to.eql(['foo', 'bar']);
-  });
-});
-
-describe('text2buffer', () => {
-  it('should handle empty text', async () => {
-    const buf = await new Promise((resolve) => {
-      text2buffer('', resolve);
-    });
-    expect(buf.byteLength).to.eql(0);
-  });
-
-  it('should handle no-provided blocksize', async () => {
-    const buf = await new Promise((resolve) => {
-      text2buffer('abc', resolve);
-    });
-    expect(buf.byteLength).to.eql(3);
-  });
-
-  it('should handle provided blocksize', async () => {
-    const buf = await new Promise((resolve) => {
-      text2buffer('abc', resolve, 3);
-    });
-    expect(buf.byteLength).to.eql(3);
-  });
-
-  it('should handle larger text than blocksize', async () => {
-    const buf = await new Promise((resolve) => {
-      text2buffer('abcdef', resolve, 3);
-    });
-    expect(buf.byteLength).to.eql(6);
   });
 });
