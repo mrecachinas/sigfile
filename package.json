@@ -5,6 +5,21 @@
   "version": "0.1.9",
   "homepage": "https://lgsinnovations.github.io/sigfile",
   "main": "dist/sigfile.js",
+  "module": "dist/sigfile.mjs",
+  "exports": {
+    ".": {
+      "import": "./dist/sigfile.mjs",
+      "require": "./dist/sigfile.js"
+    },
+    "./bluefile": {
+      "import": "./dist/bluefile.mjs",
+      "require": "./dist/bluefile.js"
+    },
+    "./matfile": {
+      "import": "./dist/matfile.mjs",
+      "require": "./dist/matfile.js"
+    }
+  },
   "files": [
     "dist"
   ],
@@ -36,56 +51,6 @@
     "parsing",
     "file-parser"
   ],
-  "babel": {
-    "presets": [
-      [
-        "@babel/preset-env",
-        {
-          "targets": {
-            "node": "current"
-          }
-        }
-      ]
-    ],
-    "plugins": [
-      "@babel/plugin-proposal-class-properties"
-    ]
-  },
-  "eslintConfig": {
-    "env": {
-      "browser": true,
-      "node": true,
-      "es2017": true,
-      "jest": true
-    },
-    "globals": {
-      "page": true,
-      "browser": true,
-      "context": true,
-      "jestPuppeteer": true
-    },
-    "extends": [
-      "eslint:recommended",
-      "prettier"
-    ],
-    "parser": "babel-eslint",
-    "parserOptions": {
-      "ecmaVersion": 9,
-      "sourceType": "module"
-    },
-    "plugins": [
-      "jest"
-    ],
-    "rules": {
-      "no-unused-vars": [
-        "error",
-        {
-          "argsIgnorePattern": "^_",
-          "varsIgnorePattern": "^_"
-        }
-      ]
-    }
-  },
   "prettier": {
     "overrides": [
       {
@@ -103,41 +68,34 @@
     ]
   },
   "scripts": {
-    "build:prod": "npm run clean && npm run lint && npx webpack --progress --mode=production",
-    "build:dev": "npm run clean && npm run lint && npx webpack --progress --mode=development",
+    "build:prod": "npm run clean && npm run lint && npx rollup -c --environment NODE_ENV:production",
+    "build:dev": "npm run clean && npm run lint && npx rollup -c",
     "clean": "rm -rf ./dist",
-    "eslint": "npx eslint . --fix --ignore-path .gitignore",
-    "eslint:check": "npx eslint . --ignore-path .gitignore",
+    "eslint": "npx eslint . --fix",
+    "eslint:check": "npx eslint .",
     "generate-docs": "rm -rf ./doc/; npx jsdoc --configure .jsdoc.json --verbose",
     "lint": "npm run prettier && npm run eslint",
-    "prettier": "npx prettier --ignore-path .gitignore --write \"**/*{.js,.css,.json}\"",
-    "prettier:check": "npx prettier --check --ignore-path .gitignore --write \"**/*{.js,.css,.json}\"",
-    "test:browser": "npx jest --coverage -c jest.browser.config.js --env=jsdom",
-    "test:node": "npx jest --coverage -c jest.node.config.js",
-    "test": "npm run test:node && npm run test:browser"
+    "prettier": "npx prettier --ignore-path .gitignore --write \"**/*{.js,.mjs,.css,.json}\"",
+    "prettier:check": "npx prettier --check --ignore-path .gitignore \"**/*{.js,.mjs,.css,.json}\"",
+    "test:browser": "vitest run -c vitest.browser.config.mjs",
+    "test:node": "vitest run -c vitest.node.config.mjs",
+    "test": "npm run test:node && npm run test:browser",
+    "test:coverage": "vitest run -c vitest.node.config.mjs --coverage && vitest run -c vitest.browser.config.mjs --coverage"
   },
   "dependencies": {},
   "devDependencies": {
-    "@babel/core": "^7.9.0",
-    "@babel/plugin-proposal-class-properties": "^7.8.3",
-    "@babel/preset-env": "^7.9.5",
-    "babel-eslint": "^10.1.0",
-    "babel-jest": "^25.3.0",
-    "babel-loader": "^8.1.0",
-    "chai": "^4.2.0",
-    "coverage": "^0.4.1",
-    "eslint": "^6.8.0",
-    "eslint-config-prettier": "^6.10.1",
-    "eslint-plugin-jest": "^23.8.2",
-    "http-server": "^0.12.1",
-    "jest": "^25.3.0",
-    "jest-cli": "^25.3.0",
-    "jest-puppeteer": "^4.4.0",
+    "@eslint/js": "^9.0.0",
+    "@rollup/plugin-json": "^6.0.0",
+    "@rollup/plugin-node-resolve": "^16.0.0",
+    "@rollup/plugin-terser": "^0.4.0",
+    "@vitest/coverage-v8": "^3.0.0",
+    "eslint": "^9.0.0",
+    "eslint-config-prettier": "^9.0.0",
+    "globals": "^15.0.0",
     "jsdoc": "^3.6.4",
     "minami": "^1.2.3",
-    "prettier": "^2.0.4",
-    "puppeteer": "^3.0.1",
-    "webpack": "^4.42.1",
-    "webpack-cli": "^3.3.11"
+    "prettier": "^3.0.0",
+    "rollup": "^4.0.0",
+    "vitest": "^3.0.0"
   }
 }
