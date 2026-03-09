@@ -44,7 +44,7 @@ class MatHeader {
    * @memberOf matfile
    * @private
    */
-  static ARRAY_BUFFER_ENDIANNESS = endianness(); // eslint-disable-line no-unused-vars
+  static ARRAY_BUFFER_ENDIANNESS = endianness();
 
   /**
    * @memberOf matfile
@@ -230,12 +230,15 @@ class MatHeader {
     if (this.buf != null) {
       const dvhdr = new DataView(this.buf);
       this.headerStr = ab2str(
-        this.buf.slice(MatHeader.headerTextBegin - 1, MatHeader.headerTextEnd)
+        this.buf.slice(MatHeader.headerTextBegin - 1, MatHeader.headerTextEnd),
       );
 
       // get endianness
       this.datarep = ab2str(
-        this.buf.slice(MatHeader.endianCharsBegin - 1, MatHeader.endianCharsEnd)
+        this.buf.slice(
+          MatHeader.endianCharsBegin - 1,
+          MatHeader.endianCharsEnd,
+        ),
       );
       const littleEndianHdr = this.datarep === 'IM';
       const littleEndianData = this.datarep === 'IM';
@@ -249,23 +252,23 @@ class MatHeader {
       this.subsystemOffset = ab2str(
         this.buf.slice(
           MatHeader.subsysOffsetBegin - 1,
-          MatHeader.subsysOffsetEnd
-        )
+          MatHeader.subsysOffsetEnd,
+        ),
       );
       this.version = dvhdr.getUint16(
         MatHeader.versionOffsetBegin - 1,
-        littleEndianHdr
+        littleEndianHdr,
       );
       this.versionName = MatHeader.versionNames[this.version];
 
       this.dataType = dvhdr.getUint32(
         MatHeader.firstDataTypeOffsetBegin - 1,
-        littleEndianHdr
+        littleEndianHdr,
       );
       this.dataTypeName = MatHeader.dataTypeNames[this.dataType].name;
       this.arraySize = dvhdr.getUint32(
         MatHeader.numBytesOffsetBegin - 1,
-        littleEndianHdr
+        littleEndianHdr,
       );
 
       const beginArray = MatHeader.numBytesOffsetEnd + 1; // eslint-disable-line no-unused-vars
@@ -282,7 +285,7 @@ class MatHeader {
         dvhdr,
         typeName,
         currIndex - 1,
-        littleEndianData
+        littleEndianData,
       );
       currIndex += typeSize;
 
@@ -295,7 +298,7 @@ class MatHeader {
         dvhdr,
         typeName,
         currIndex - 1,
-        littleEndianData
+        littleEndianData,
       );
       currIndex += typeSize;
 
@@ -322,7 +325,7 @@ class MatHeader {
       // Dimensions size:
       const _arrayDimTotalSize = dvhdr.getUint32(
         currIndex - 1,
-        littleEndianData
+        littleEndianData,
       );
       currIndex += 4;
 
@@ -331,7 +334,7 @@ class MatHeader {
         dvhdr,
         dimTypeName,
         currIndex - 1,
-        littleEndianData
+        littleEndianData,
       );
       currIndex += dimTypeSize;
 
@@ -345,7 +348,7 @@ class MatHeader {
         dvhdr,
         dimTypeName,
         currIndex - 1,
-        littleEndianData
+        littleEndianData,
       );
       currIndex += typeSize;
 
@@ -369,7 +372,7 @@ class MatHeader {
           dvhdr,
           arrayNameTypeName,
           currIndex - 1,
-          littleEndianData
+          littleEndianData,
         );
         currIndex += 4;
       }
@@ -471,14 +474,14 @@ class MatHeader {
       buf,
       currIndex - 1,
       arrayValSize / typeSize,
-      typeName
+      typeName,
     );
   }
 }
 
 class MatFileReader extends BaseFileReader {
   constructor(options) {
-    super(options, MatHeader);
+    super(MatHeader, options);
   }
 }
 

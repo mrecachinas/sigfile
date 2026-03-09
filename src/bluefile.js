@@ -103,15 +103,15 @@ class BlueHeader {
     X: 10,
     T: 16,
     U: 1,
-    '1': 1,
-    '2': 2,
-    '3': 3,
-    '4': 4,
-    '5': 5,
-    '6': 6,
-    '7': 7,
-    '8': 8,
-    '9': 9,
+    1: 1,
+    2: 2,
+    3: 3,
+    4: 4,
+    5: 5,
+    6: 6,
+    7: 7,
+    8: 8,
+    9: 9,
   };
 
   /**
@@ -268,7 +268,7 @@ class BlueHeader {
         this.buf,
         this.ext_size,
         this.ext_start * 512,
-        littleEndianHdr
+        littleEndianHdr,
       );
     }
   }
@@ -313,13 +313,14 @@ class BlueHeader {
       throw `Not supported ${BlueHeader.ARRAY_BUFFER_ENDIANNESS} ${littleEndian}`;
     }
     if (buf) {
-      if (offset && data_end) {
+      if (offset && data_end && offset < buf.byteLength) {
         const length = (data_end - offset) / this.bps;
         this.dview = this.createArray(buf, offset, length);
-      } else {
+        this.size = this.dview.length / (this.spa * this.ape);
+      } else if (!offset) {
         this.dview = this.createArray(buf);
+        this.size = this.dview.length / (this.spa * this.ape);
       }
-      this.size = this.dview.length / (this.spa * this.ape);
     } else {
       this.dview = this.createArray(null, null, this.size);
     }
@@ -345,7 +346,7 @@ class BlueHeader {
     const dic_index = {};
     const dict_keywords = {};
     let ii = 0;
-    let temp_buf = buf.slice(offset, offset+lbuf);
+    let temp_buf = buf.slice(offset, offset + lbuf);
     const dvhdr = new DataView(temp_buf);
     while (ii < lbuf) {
       idata = ii + 8;
