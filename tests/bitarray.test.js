@@ -1,5 +1,3 @@
-import 'jest';
-import { expect } from 'chai';
 import BitArray from '../src/bitarray';
 
 describe('BitArray class', () => {
