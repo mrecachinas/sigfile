@@ -1,3 +1,11 @@
+import { ChunkedDataView } from '../src/chunked-dataview';
+
+type LazyHeader<T> = T & {
+  _chunkedView: ChunkedDataView;
+  getDataSlice(elementStart: number, elementEnd: number): Promise<ArrayBufferView>;
+  clearCache(): void;
+};
+
 export declare class BaseFileReader<T> {
   header_class: new (buf: ArrayBuffer | null, options?: object) => T;
   options: object | undefined;
@@ -28,4 +36,28 @@ export declare class BaseFileReader<T> {
    * @returns an AbortController that can cancel the request
    */
   read_http(href: string, onload: (hdr: T | null) => void): AbortController;
+
+  /**
+   * Read only the header from a File/Blob without loading the entire file.
+   * Returns a header with a `getDataSlice` method for lazy, chunked data access.
+   * @param theFile - a File or Blob object
+   * @param options - optional read options
+   * @returns Promise resolving to the parsed header with lazy data access
+   */
+  read_chunked(
+    theFile: File | Blob,
+    options?: { signal?: AbortSignal },
+  ): Promise<LazyHeader<T>>;
+
+  /**
+   * Read a file from a URL using HTTP Range requests for lazy data access.
+   * Only fetches the header initially; data is loaded on demand via `getDataSlice`.
+   * @param href - the URL for the file
+   * @param options - optional read options
+   * @returns Promise resolving to the parsed header with lazy data access
+   */
+  read_http_streaming(
+    href: string,
+    options?: { signal?: AbortSignal },
+  ): Promise<LazyHeader<T>>;
 }

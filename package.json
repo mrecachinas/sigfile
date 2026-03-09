@@ -88,7 +88,8 @@
     "test:browser": "vitest run -c vitest.browser.config.mjs",
     "test:node": "vitest run -c vitest.node.config.mjs",
     "test": "npm run test:node && npm run test:browser",
-    "test:coverage": "vitest run -c vitest.node.config.mjs --coverage && vitest run -c vitest.browser.config.mjs --coverage"
+    "test:coverage": "vitest run -c vitest.node.config.mjs --coverage && vitest run -c vitest.browser.config.mjs --coverage",
+    "bench": "vitest bench benchmarks/"
   },
   "dependencies": {},
   "devDependencies": {
