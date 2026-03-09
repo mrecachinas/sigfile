@@ -31,13 +31,13 @@ function bufferToBlob(buffer, name) {
   };
 }
 
-describe('BaseFileReader.read_chunked', () => {
+describe('BaseFileReader.read with { lazy: true }', () => {
   it('should parse header without loading full file', async () => {
     const data = await readFile(`${DATA_DIR}/sin.tmp`);
     const blob = bufferToBlob(data, 'sin.tmp');
     const reader = new BlueFileReader();
 
-    const hdr = await reader.read_chunked(blob);
+    const hdr = await reader.read(blob, null, { lazy: true });
     expect(hdr.type).to.equal(1000);
     expect(hdr.format).to.equal('SD');
     expect(hdr.file_name).to.equal('sin.tmp');
@@ -50,7 +50,7 @@ describe('BaseFileReader.read_chunked', () => {
     const blob = bufferToBlob(data, 'sin.tmp');
     const reader = new BlueFileReader();
 
-    const hdr = await reader.read_chunked(blob);
+    const hdr = await reader.read(blob, null, { lazy: true });
     const slice = await hdr.getDataSlice(0, 10);
 
     expect(slice.length).to.equal(10);
@@ -66,7 +66,7 @@ describe('BaseFileReader.read_chunked', () => {
     controller.abort();
 
     await expect(
-      reader.read_chunked(blob, { signal: controller.signal }),
+      reader.read(blob, null, { lazy: true, signal: controller.signal }),
     ).rejects.toThrow('Aborted');
   });
 
@@ -75,10 +75,23 @@ describe('BaseFileReader.read_chunked', () => {
     const blob = bufferToBlob(data, 'sin.tmp');
     const reader = new BlueFileReader();
 
-    const hdr = await reader.read_chunked(blob);
+    const hdr = await reader.read(blob, null, { lazy: true });
     await hdr.getDataSlice(0, 10);
     expect(hdr._chunkedView.cachedChunks).to.be.greaterThan(0);
     hdr.clearCache();
     expect(hdr._chunkedView.cachedChunks).to.equal(0);
+  });
+
+  it('should still work in non-lazy mode with callback', async () => {
+    const data = await readFile(`${DATA_DIR}/sin.tmp`);
+    const blob = bufferToBlob(data, 'sin.tmp');
+    const reader = new BlueFileReader();
+
+    const hdr = await new Promise((resolve) => {
+      reader.read(blob, resolve);
+    });
+    expect(hdr.type).to.equal(1000);
+    expect(hdr.dview).to.not.be.undefined;
+    expect(hdr.dview.length).to.be.greaterThan(0);
   });
 });
