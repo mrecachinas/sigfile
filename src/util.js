@@ -106,7 +106,7 @@ function getInt64(dataView, index, littleEndian) {
   const MAX_INT = Math.pow(2, 53);
   const [highIndex, lowIndex] = littleEndian ? [4, 0] : [0, 4];
   const high = dataView.getInt32(index + highIndex, littleEndian);
-  const low = dataView.getInt32(index + lowIndex, littleEndian);
+  const low = dataView.getUint32(index + lowIndex, littleEndian);
   const rv = low + pow2(32) * high;
   if (rv >= MAX_INT) {
     console.warn('Int is bigger than JS can represent.');
@@ -152,28 +152,19 @@ function applySupportsTypedArray() {
  * @param   {boolean} [apply=undefined] - whether or not apply supports typed arrays
  * @returns {string} The string representation of the data buffer
  */
-function ab2str(buf, apply) {
+function ab2str(buf) {
   const uintbuf = new Uint8Array(buf);
-  // Set `_applySupportsTypedArray` as static variable
-  if (typeof ab2str._applySupportsTypedArray == 'undefined') {
-    // It has not... perform the initialization
-    if (apply !== undefined) {
-      ab2str._applySupportsTypedArray = apply;
-    } else {
-      ab2str._applySupportsTypedArray = applySupportsTypedArray();
-    }
+  if (typeof TextDecoder !== 'undefined') {
+    return new TextDecoder('latin1').decode(uintbuf);
   }
-  // Firefox 3.6 nor iOS devices can use ArrayBuffers with .apply
-  // the maximum size of uintbuf will be limited by the stack size
-  // https://stackoverflow.com/questions/49123222/converting-array-buffer-to-string-maximum-call-stack-size-exceeded
-  // so we may want to convert to TextDecoder or some other method down the road
-  if (ab2str._applySupportsTypedArray) {
-    return String.fromCharCode.apply(null, uintbuf);
-  } else {
-    return uintbuf.reduce((prev, curr) => {
-      return prev + String.fromCharCode(curr);
-    }, '');
+  // Chunked fallback to avoid stack overflow with Function.prototype.apply
+  const CHUNK_SIZE = 8192;
+  let result = '';
+  for (let i = 0; i < uintbuf.length; i += CHUNK_SIZE) {
+    const chunk = uintbuf.subarray(i, Math.min(i + CHUNK_SIZE, uintbuf.length));
+    result += String.fromCharCode.apply(null, chunk);
   }
+  return result;
 }
 
 /**

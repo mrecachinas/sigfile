@@ -53,12 +53,11 @@ describe('BitArray class', () => {
     arr.setBit(0, 0);
     expect(arr.getBit(0)).to.eql(0);
   });
-  it('should return false if trying to set value at non-integer index', () => {
+  it('should allow setting non-integer properties without throwing', () => {
     const buf = new Uint8Array([255, 255]);
     const arr = new BitArray(buf.buffer);
-    expect(() => {
-      arr['d'] = 0;
-    }).to.throw(TypeError);
+    arr['d'] = 0;
+    expect(arr['d']).to.eql(0);
   });
   it('should set a bit value to 0 at a specific bit index using []', () => {
     const buf = new Uint8Array([255, 255]);

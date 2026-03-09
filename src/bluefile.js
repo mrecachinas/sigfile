@@ -308,9 +308,9 @@ class BlueHeader {
     const arrayBufferBigEndian = BlueHeader.ARRAY_BUFFER_ENDIANNESS === 'BE';
     if (
       (arrayBufferLittleEndian && !littleEndian) ||
-      (arrayBufferBigEndian && this.littleEndianData)
+      (arrayBufferBigEndian && littleEndian)
     ) {
-      throw `Not supported ${BlueHeader.ARRAY_BUFFER_ENDIANNESS} ${littleEndian}`;
+      throw new Error(`Not supported ${BlueHeader.ARRAY_BUFFER_ENDIANNESS} ${littleEndian}`);
     }
     if (buf) {
       if (offset && data_end && offset < buf.byteLength) {
@@ -351,6 +351,9 @@ class BlueHeader {
     while (ii < lbuf) {
       idata = ii + 8;
       lkey = dvhdr.getUint32(ii, littleEndian);
+      if (lkey <= 0 || lkey > lbuf - ii) {
+        break;
+      }
       lextra = dvhdr.getInt16(ii + 4, littleEndian);
       ltag = dvhdr.getInt8(ii + 6);
       format = ab2str(temp_buf.slice(ii + 7, ii + 8));
@@ -368,7 +371,7 @@ class BlueHeader {
         }
       } else {
         // Should never get here.
-        throw `Unsupported keyword format ${format} for tag ${tag}`;
+        throw new Error(`Unsupported keyword format ${format} for tag ${tag}`);
       }
 
       if (typeof dic_index[tag] === 'undefined') {
@@ -420,7 +423,7 @@ class BlueHeader {
   createArray(buf, offset, length) {
     const TypedArray = BlueHeader._XM_TO_TYPEDARRAY[this.format[1]];
     if (TypedArray === undefined) {
-      throw `unknown format ${this.format[1]}`;
+      throw new Error(`unknown format ${this.format[1]}`);
     }
     // backwards compatibility with some implementations of typed array
     // requires this
@@ -434,8 +437,8 @@ class BlueHeader {
     if (buf) {
       if (Array.isArray(buf) && Array.isArray(buf[0])) {
         // Flatten 2-D array into 1-D
-        buf = [].concat.apply([], buf);
         length = buf.length * buf[0].length;
+        buf = buf.flat();
         result = new TypedArray(buf, offset, length);
       } else if (Array.isArray(buf) && ArrayBuffer.isView(buf[0])) {
         // Flatten 2-D array of TypedArrays

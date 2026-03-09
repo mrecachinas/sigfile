@@ -23,7 +23,7 @@ class BitArray {
    */
   constructor(buf) {
     if (!(buf instanceof ArrayBuffer) && typeof buf === 'number') {
-      this.buffer = new ArrayBuffer(buf / 8);
+      this.buffer = new ArrayBuffer(Math.ceil(buf / 8));
       this.u8 = new Uint8Array(this.buffer);
     } else {
       this.buffer = buf;
@@ -31,20 +31,18 @@ class BitArray {
     }
     return new Proxy(this, {
       get(obj, prop) {
-        if (!obj[prop]) {
-          return obj.getBit(prop);
-        } else {
-          return obj[prop];
+        if (typeof prop === 'string' && /^\d+$/.test(prop)) {
+          return obj.getBit(Number(prop));
         }
+        return Reflect.get(obj, prop);
       },
       set(obj, prop, value) {
-        const propInt = parseInt(prop);
-        if (isNaN(propInt)) {
-          return false;
-        } else {
-          obj.setBit(prop, value);
+        if (typeof prop === 'string' && /^\d+$/.test(prop)) {
+          obj.setBit(Number(prop), value);
           return true;
         }
+        obj[prop] = value;
+        return true;
       },
     });
   }
@@ -163,9 +161,9 @@ class BitArray {
    */
   subarray(start, stop) {
     let sub = [];
-    start = start || 0;
+    start = start ?? 0;
     start = start < 0 ? 0 : start;
-    stop = stop || this.length;
+    stop = stop ?? this.length;
     stop = stop > this.length ? this.length : stop;
     for (let i = start; i < stop; i++) {
       sub.push(this.getBit(i));
