@@ -77,8 +77,8 @@
     ]
   },
   "scripts": {
-    "build:prod": "npm run clean && npm run lint && npx rollup -c --environment NODE_ENV:production && npx tsc -p tsconfig.build.json",
-    "build:dev": "npm run clean && npm run lint && npx rollup -c && npx tsc -p tsconfig.build.json",
+    "build:prod": "npm run clean && npm run lint && NODE_ENV=production node esbuild.config.mjs && npx tsc -p tsconfig.build.json",
+    "build:dev": "npm run clean && npm run lint && node esbuild.config.mjs && npx tsc -p tsconfig.build.json",
     "clean": "rm -rf ./dist ./types",
     "eslint": "npx eslint . --fix",
     "eslint:check": "npx eslint .",
@@ -86,26 +86,19 @@
     "lint": "npm run prettier && npm run eslint",
     "prettier": "npx prettier --ignore-path .gitignore --write \"**/*{.js,.mjs,.ts,.css,.json}\"",
     "prettier:check": "npx prettier --check --ignore-path .gitignore \"**/*{.js,.mjs,.ts,.css,.json}\"",
-    "test:browser": "vitest run -c vitest.browser.config.mjs",
-    "test:node": "vitest run -c vitest.node.config.mjs",
-    "test": "npm run test:node && npm run test:browser",
-    "test:coverage": "vitest run -c vitest.node.config.mjs --coverage && vitest run -c vitest.browser.config.mjs --coverage",
-    "bench": "vitest bench benchmarks/"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
-    "@rollup/plugin-json": "^6.0.0",
-    "@rollup/plugin-node-resolve": "^16.0.0",
-    "@rollup/plugin-terser": "^0.4.0",
     "@vitest/coverage-v8": "^3.0.0",
+    "esbuild": "^0.27.3",
     "eslint": "^9.0.0",
     "eslint-config-prettier": "^9.0.0",
     "globals": "^15.0.0",
     "jsdoc": "^3.6.4",
     "minami": "^1.2.3",
     "prettier": "^3.0.0",
-    "rollup": "^4.0.0",
-    "rollup-plugin-esbuild": "^6.2.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.57.0",
     "vitest": "^3.0.0"

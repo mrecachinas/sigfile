@@ -25,7 +25,7 @@
 import * as bluefile from './bluefile';
 import * as matfile from './matfile';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore - version imported from package.json via rollup plugin
+// @ts-ignore - version imported from package.json via esbuild bundler
 import { version } from '../package.json';
 
 export { bluefile, matfile, version };
