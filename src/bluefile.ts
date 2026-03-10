@@ -26,8 +26,17 @@ import BitArray from './bitarray';
 import { BaseFileReader } from './basefilereader';
 import { endianness, ab2str, getInt64 } from './util';
 
+export type ExtHeaderType =
+  | 'dict'
+  | 'json'
+  | 'list'
+  | 'XMTable'
+  | 'JSON'
+  | 'DICT'
+  | Record<string, never>;
+
 export interface BlueHeaderOptions {
-  ext_header_type?: string | Record<string, never>;
+  ext_header_type?: ExtHeaderType;
 }
 
 export type BlueTypedArray =
@@ -62,9 +71,9 @@ type DataViewParser =
   | ((dv: DataView, index: number, littleEndian: boolean) => number)
   | null;
 
-export type ExtHeader =
-  | Record<string, unknown>
-  | Array<{ tag: string; value: unknown }>;
+export type ExtHeaderDict = Record<string, string | number>;
+export type ExtHeaderList = Array<{ tag: string; value: string | number }>;
+export type ExtHeader = ExtHeaderDict | ExtHeaderList;
 
 class BlueHeader {
   static ARRAY_BUFFER_ENDIANNESS: 'LE' | 'BE' = endianness();
@@ -268,13 +277,13 @@ class BlueHeader {
       ltag: number,
       format: string,
       tag: string,
-      data: unknown,
+      data: string | number,
       ldata: number,
       itag: number,
       idata: number;
-    const keywords: Array<{ tag: string; value: unknown }> = [];
+    const keywords: ExtHeaderList = [];
     const dic_index: Record<string, number> = {};
-    const dict_keywords: Record<string, unknown> = {};
+    const dict_keywords: ExtHeaderDict = {};
     let ii = 0;
     const temp_buf = buf.slice(offset, offset + lbuf);
     const dvhdr = new DataView(temp_buf);
@@ -316,10 +325,10 @@ class BlueHeader {
       });
       ii += lkey;
     }
-    const dictTypes: unknown[] = [
+    const dictTypes: ExtHeaderType[] = [
       'dict',
       'json',
-      {},
+      {} as Record<string, never>,
       'XMTable',
       'JSON',
       'DICT',
@@ -387,7 +396,7 @@ class BlueHeader {
   }
 }
 
-class BlueFileReader extends BaseFileReader<BlueHeader> {
+class BlueFileReader extends BaseFileReader<BlueHeader, BlueHeaderOptions> {
   constructor(options?: BlueHeaderOptions) {
     super(BlueHeader, options);
   }

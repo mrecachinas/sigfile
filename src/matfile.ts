@@ -378,8 +378,11 @@ class MatHeader {
   }
 }
 
-class MatFileReader extends BaseFileReader<MatHeader> {
-  constructor(options?: object) {
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface MatFileReaderOptions {}
+
+class MatFileReader extends BaseFileReader<MatHeader, MatFileReaderOptions> {
+  constructor(options?: MatFileReaderOptions) {
     super(MatHeader, options);
   }
 }

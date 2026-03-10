@@ -24,17 +24,20 @@
  */
 import BitArray from './bitarray';
 import { BaseFileReader } from './basefilereader';
+export type ExtHeaderType = 'dict' | 'json' | 'list' | 'XMTable' | 'JSON' | 'DICT' | Record<string, never>;
 export interface BlueHeaderOptions {
-    ext_header_type?: string | Record<string, never>;
+    ext_header_type?: ExtHeaderType;
 }
 export type BlueTypedArray = BitArray | Int8Array | Uint8Array | Int16Array | Int32Array | Float32Array | Float64Array;
 type BlueTypedArrayConstructor = typeof BitArray | typeof Int8Array | typeof Uint8Array | typeof Int16Array | typeof Int32Array | typeof Float32Array | typeof Float64Array | null;
 type DataViewMethod = 'getUint8' | 'getInt8' | 'getInt16' | 'getInt32' | 'getFloat32' | 'getFloat64';
 type DataViewParser = DataViewMethod | ((dv: DataView, index: number, littleEndian: boolean) => number) | null;
-export type ExtHeader = Record<string, unknown> | Array<{
+export type ExtHeaderDict = Record<string, string | number>;
+export type ExtHeaderList = Array<{
     tag: string;
-    value: unknown;
+    value: string | number;
 }>;
+export type ExtHeader = ExtHeaderDict | ExtHeaderList;
 declare class BlueHeader {
     static ARRAY_BUFFER_ENDIANNESS: 'LE' | 'BE';
     static _SPA: Record<string, number>;
@@ -78,7 +81,7 @@ declare class BlueHeader {
     unpack_keywords(buf: ArrayBuffer, lbuf: number, offset: number, littleEndian: boolean): ExtHeader;
     createArray(buf: ArrayBuffer | null, offset?: number, length?: number): BlueTypedArray;
 }
-declare class BlueFileReader extends BaseFileReader<BlueHeader> {
+declare class BlueFileReader extends BaseFileReader<BlueHeader, BlueHeaderOptions> {
     constructor(options?: BlueHeaderOptions);
 }
 export { BlueHeader, BlueFileReader };

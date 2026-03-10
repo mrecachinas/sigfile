@@ -1,9 +1,8 @@
 import { parseURL } from './util';
 
-export type HeaderConstructor<T> = new (
-  buf: ArrayBuffer | null,
-  options?: object,
-) => T;
+export type HeaderConstructor<T, O = undefined> = O extends undefined
+  ? new (buf: ArrayBuffer | null) => T
+  : new (buf: ArrayBuffer | null, options?: O) => T;
 
 export type OnLoadCallback<T> = (hdr: T | null) => void;
 
@@ -12,11 +11,11 @@ interface HeaderBase {
   file_name?: string | null;
 }
 
-class BaseFileReader<T extends HeaderBase> {
-  header_class: HeaderConstructor<T>;
-  options: object | undefined;
+class BaseFileReader<T extends HeaderBase, O = undefined> {
+  header_class: HeaderConstructor<T, O>;
+  options: O | undefined;
 
-  constructor(header_class: HeaderConstructor<T>, options?: object) {
+  constructor(header_class: HeaderConstructor<T, O>, options?: O) {
     this.header_class = header_class;
     this.options = options;
   }
@@ -31,7 +30,7 @@ class BaseFileReader<T extends HeaderBase> {
     blob
       .arrayBuffer()
       .then((raw) => {
-        const hdr = new this.header_class(raw, this.options);
+        const hdr = new this.header_class(raw, this.options as O);
         hdr.file = theFile;
         hdr.file_name = (theFile as File).name;
         onload(hdr);
@@ -61,7 +60,7 @@ class BaseFileReader<T extends HeaderBase> {
       })
       .then((arrayBuffer) => {
         if (!arrayBuffer) return;
-        const hdr = new this.header_class(arrayBuffer, this.options);
+        const hdr = new this.header_class(arrayBuffer, this.options as O);
         const fileUrl = parseURL(href);
         hdr.file_name = fileUrl.file;
         onload(hdr);
