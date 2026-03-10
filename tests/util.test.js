@@ -166,7 +166,7 @@ describe('ab2str', () => {
     arr[0] = 97;
     arr[1] = 98;
     arr[2] = 99;
-    const result = ab2str(buf, true);
+    const result = ab2str(buf);
     expect(result).to.eql('abc');
   });
 
@@ -176,8 +176,7 @@ describe('ab2str', () => {
     arr[0] = 97;
     arr[1] = 98;
     arr[2] = 99;
-    ab2str._applySupportsTypedArray = false;
-    const result = ab2str(buf, false);
+    const result = ab2str(buf);
     expect(result).to.eql('abc');
   });
 
@@ -187,8 +186,7 @@ describe('ab2str', () => {
     arr[0] = 97;
     arr[1] = 98;
     arr[2] = 99;
-    ab2str._applySupportsTypedArray = undefined;
-    const result = ab2str(buf, false);
+    const result = ab2str(buf);
     expect(result).to.eql('abc');
   });
 });

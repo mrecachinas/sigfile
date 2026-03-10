@@ -350,7 +350,7 @@ class MatHeader {
         currIndex - 1,
         littleEndianData,
       );
-      currIndex += typeSize;
+      currIndex += dimTypeSize;
 
       // array name type
       let arrayNameTypeNum = dvhdr.getUint32(currIndex - 1, littleEndianData);
@@ -361,7 +361,7 @@ class MatHeader {
       if (arrayNameTypeNum > 15) {
         arrayNameTypeNum &= 0x00ff;
         small = true;
-        nameSize = dvhdr.getUint16(currIndex - 5, littleEndianData);
+        nameSize = dvhdr.getUint16(currIndex - 3, littleEndianData);
       }
 
       const arrayNameTypeName = MatHeader.dataTypeNames[arrayNameTypeNum].name;
@@ -385,8 +385,10 @@ class MatHeader {
       const jumpTo = nameSize + rndUp;
       currIndex += jumpTo;
 
-      // set the data field in the header
-      this.setData(this.buf, dvhdr, currIndex, littleEndianData);
+      // set the data field in the header (only if buffer is large enough)
+      if (currIndex - 1 < this.buf.byteLength) {
+        this.setData(this.buf, dvhdr, currIndex, littleEndianData);
+      }
     }
   }
 
@@ -404,7 +406,7 @@ class MatHeader {
     // TODO: big endian implemenation
     const TypedArray = MatHeader._MAT_TO_TYPEDARRAY[type];
     if (TypedArray === undefined) {
-      throw `unknown type ${type}`;
+      throw new Error(`unknown type ${type}`);
     }
 
     if (offset === undefined) {
@@ -430,9 +432,13 @@ class MatHeader {
   getDataWithType(dv, typeName, offset, littleEndian) {
     const typeFunc = MatHeader._MAT_TO_DATAVIEW[typeName];
     if (typeFunc === undefined) {
-      throw `Type name ${typeName} is not supported`;
+      throw new Error(`Type name ${typeName} is not supported`);
     }
-    return dv[typeFunc](offset, littleEndian);
+    if (typeof typeFunc === 'string') {
+      return dv[typeFunc](offset, littleEndian);
+    } else {
+      return typeFunc(dv, offset, littleEndian);
+    }
   }
 
   /**
@@ -454,7 +460,7 @@ class MatHeader {
     if (typeNum > 15) {
       typeNum &= 0x00ff;
       small = true;
-      arrayValSize = dvhdr.getUint16(currIndex + 1, 2, littleEndian);
+      arrayValSize = dvhdr.getUint16(currIndex + 1, littleEndian);
     } else {
       currIndex += 4;
     }
