@@ -26,7 +26,7 @@ describe('update', () => {
         },
       },
     };
-    const src = {
+    const src: Record<string, unknown> = {
       a: 1,
       b: 'foo',
     };
@@ -54,7 +54,7 @@ describe('update', () => {
         },
       },
     };
-    const src = {
+    const src: Record<string, unknown> = {
       a: 1,
       b: 'foo',
     };
@@ -73,11 +73,11 @@ describe('update', () => {
   });
 
   it('should handle the same object', () => {
-    const dst = {
+    const dst: Record<string, unknown> = {
       a: 1,
       b: 'foo',
     };
-    const src = {
+    const src: Record<string, unknown> = {
       a: 1,
       b: 'foo',
     };
@@ -128,7 +128,9 @@ describe('getInt64', () => {
 
 describe('applySupportsTypedArray', () => {
   it("should return false if doesn't support", () => {
-    vi.spyOn(String.fromCharCode, 'apply').mockImplementation(() => false);
+    vi.spyOn(String.fromCharCode, 'apply').mockImplementation(
+      () => false as unknown as string,
+    );
     const result = applySupportsTypedArray();
     expect(result).to.be.false;
   });
@@ -166,7 +168,7 @@ describe('ab2str', () => {
     arr[0] = 97;
     arr[1] = 98;
     arr[2] = 99;
-    const result = ab2str(buf);
+    const result = ab2str(buf, true);
     expect(result).to.eql('abc');
   });
 
@@ -176,7 +178,10 @@ describe('ab2str', () => {
     arr[0] = 97;
     arr[1] = 98;
     arr[2] = 99;
-    const result = ab2str(buf);
+    (
+      ab2str as unknown as { _applySupportsTypedArray: boolean }
+    )._applySupportsTypedArray = false;
+    const result = ab2str(buf, false);
     expect(result).to.eql('abc');
   });
 
@@ -186,7 +191,10 @@ describe('ab2str', () => {
     arr[0] = 97;
     arr[1] = 98;
     arr[2] = 99;
-    const result = ab2str(buf);
+    (
+      ab2str as unknown as { _applySupportsTypedArray: boolean | undefined }
+    )._applySupportsTypedArray = undefined;
+    const result = ab2str(buf, false);
     expect(result).to.eql('abc');
   });
 });

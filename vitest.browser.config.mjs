@@ -2,13 +2,13 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    include: ["tests/**/*.test.js", "tests/**/*.browsertest.js"],
+    include: ["tests/**/*.test.ts", "tests/**/*.browsertest.ts"],
     environment: "node",
     globals: true,
-    globalSetup: "./tests/browser-setup.js",
+    globalSetup: "./tests/browser-setup.ts",
     coverage: {
       provider: "v8",
-      include: ["src/**/*.js"],
+      include: ["src/**/*.ts"],
       reportsDirectory: "./coverage",
     },
   },

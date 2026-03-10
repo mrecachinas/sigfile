@@ -1,10 +1,10 @@
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
+import http from 'http';
+import fs from 'fs';
+import path from 'path';
 
-module.exports = async function () {
+export default async function () {
   const server = http.createServer((req, res) => {
-    const filePath = path.join(__dirname, '..', req.url);
+    const filePath = path.join(__dirname, '..', req.url!);
     const stream = fs.createReadStream(filePath);
     res.setHeader('Access-Control-Allow-Origin', '*');
     stream.on('error', () => {
@@ -14,13 +14,13 @@ module.exports = async function () {
     stream.pipe(res);
   });
 
-  await new Promise((resolve) => {
+  await new Promise<void>((resolve) => {
     server.listen(3000, resolve);
   });
 
   return async function () {
-    await new Promise((resolve) => {
-      server.close(resolve);
+    await new Promise<void>((resolve) => {
+      server.close(() => resolve());
     });
   };
-};
+}

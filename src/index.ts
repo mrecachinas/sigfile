@@ -1,6 +1,6 @@
 /**
  * @license
- * File: sigfile.js
+ * File: sigfile.ts
  * Copyright (c) 2012-2017, LGS Innovations Inc., All rights reserved.
  *
  * This file is part of SigFile.
@@ -24,6 +24,8 @@
  */
 import * as bluefile from './bluefile';
 import * as matfile from './matfile';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore - version imported from package.json via rollup plugin
 import { version } from '../package.json';
 
 export { bluefile, matfile, version };

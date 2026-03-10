@@ -6,10 +6,10 @@
   "homepage": "https://lgsinnovations.github.io/sigfile",
   "main": "dist/sigfile.js",
   "module": "dist/sigfile.mjs",
-  "types": "types/sigfile.d.ts",
+  "types": "types/index.d.ts",
   "exports": {
     ".": {
-      "types": "./types/sigfile.d.ts",
+      "types": "./types/index.d.ts",
       "import": "./dist/sigfile.mjs",
       "require": "./dist/sigfile.js"
     },
@@ -64,8 +64,9 @@
       {
         "files": [
           "*.js",
-          "src/**/*.js",
-          "tests/**/*.js",
+          "*.ts",
+          "src/**/*.ts",
+          "tests/**/*.ts",
           "package.json"
         ],
         "options": {
@@ -76,22 +77,21 @@
     ]
   },
   "scripts": {
-    "build:prod": "npm run clean && npm run lint && npx rollup -c --environment NODE_ENV:production",
-    "build:dev": "npm run clean && npm run lint && npx rollup -c",
-    "clean": "rm -rf ./dist",
+    "build:prod": "npm run clean && npm run lint && npx rollup -c --environment NODE_ENV:production && npx tsc -p tsconfig.build.json",
+    "build:dev": "npm run clean && npm run lint && npx rollup -c && npx tsc -p tsconfig.build.json",
+    "clean": "rm -rf ./dist ./types",
     "eslint": "npx eslint . --fix",
     "eslint:check": "npx eslint .",
     "generate-docs": "rm -rf ./doc/; npx jsdoc --configure .jsdoc.json --verbose",
     "lint": "npm run prettier && npm run eslint",
-    "prettier": "npx prettier --ignore-path .gitignore --write \"**/*{.js,.mjs,.css,.json}\"",
-    "prettier:check": "npx prettier --check --ignore-path .gitignore \"**/*{.js,.mjs,.css,.json}\"",
+    "prettier": "npx prettier --ignore-path .gitignore --write \"**/*{.js,.mjs,.ts,.css,.json}\"",
+    "prettier:check": "npx prettier --check --ignore-path .gitignore \"**/*{.js,.mjs,.ts,.css,.json}\"",
     "test:browser": "vitest run -c vitest.browser.config.mjs",
     "test:node": "vitest run -c vitest.node.config.mjs",
     "test": "npm run test:node && npm run test:browser",
     "test:coverage": "vitest run -c vitest.node.config.mjs --coverage && vitest run -c vitest.browser.config.mjs --coverage",
     "bench": "vitest bench benchmarks/"
   },
-  "dependencies": {},
   "devDependencies": {
     "@eslint/js": "^9.0.0",
     "@rollup/plugin-json": "^6.0.0",
@@ -105,6 +105,9 @@
     "minami": "^1.2.3",
     "prettier": "^3.0.0",
     "rollup": "^4.0.0",
+    "rollup-plugin-esbuild": "^6.2.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.57.0",
     "vitest": "^3.0.0"
   }
 }
