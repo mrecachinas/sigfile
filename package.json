@@ -68,6 +68,7 @@
     "generate-docs": "rm -rf ./doc/; npx jsdoc --configure .jsdoc.json --verbose",
     "lint": "npx biome check --fix .",
     "lint:check": "npx biome check .",
+    "typecheck": "npx tsgo -p tsconfig.build.json --noEmit",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage"
   },
