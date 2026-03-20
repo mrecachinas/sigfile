@@ -71,9 +71,8 @@ declare class MatHeader {
     getDataWithType(dv: DataView, typeName: string, offset: number, littleEndian: boolean): number;
     setData(buf: ArrayBuffer, dvhdr: DataView, currIndex: number, littleEndian: boolean): void;
 }
-export interface MatFileReaderOptions {
-}
+export type MatFileReaderOptions = Record<string, never>;
 declare class MatFileReader extends BaseFileReader<MatHeader, MatFileReaderOptions> {
     constructor(options?: MatFileReaderOptions);
 }
-export { MatHeader, MatFileReader };
+export { MatFileReader, MatHeader };

@@ -57,7 +57,7 @@ describe('BitArray class', () => {
     const buf = new Uint8Array([255, 255]);
     const arr = new BitArray(buf.buffer);
     expect(() => {
-      (arr as unknown as Record<string, number>)['d'] = 0;
+      (arr as unknown as Record<string, number>).d = 0;
     }).to.throw(TypeError);
   });
   it('should set a bit value to 0 at a specific bit index using []', () => {

@@ -1,8 +1,13 @@
 import { parseURL } from './util';
 
 export type HeaderConstructor<T, O = undefined> = O extends undefined
-  ? new (buf: ArrayBuffer | null) => T
-  : new (buf: ArrayBuffer | null, options?: O) => T;
+  ? new (
+      buf: ArrayBuffer | null,
+    ) => T
+  : new (
+      buf: ArrayBuffer | null,
+      options?: O,
+    ) => T;
 
 export type OnLoadCallback<T> = (hdr: T | null) => void;
 

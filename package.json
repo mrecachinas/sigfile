@@ -59,48 +59,26 @@
     "parsing",
     "file-parser"
   ],
-  "prettier": {
-    "overrides": [
-      {
-        "files": [
-          "*.js",
-          "*.ts",
-          "src/**/*.ts",
-          "tests/**/*.ts",
-          "package.json"
-        ],
-        "options": {
-          "singleQuote": true,
-          "tabWidth": 2
-        }
-      }
-    ]
-  },
   "scripts": {
-    "build:prod": "npm run clean && npm run lint && NODE_ENV=production node esbuild.config.mjs && npx tsc -p tsconfig.build.json",
-    "build:dev": "npm run clean && npm run lint && node esbuild.config.mjs && npx tsc -p tsconfig.build.json",
+    "build:prod": "npm run clean && npm run lint && NODE_ENV=production node esbuild.config.mjs && npx tsgo -p tsconfig.build.json",
+    "build:dev": "npm run clean && npm run lint && node esbuild.config.mjs && npx tsgo -p tsconfig.build.json",
     "clean": "rm -rf ./dist ./types",
-    "eslint": "npx eslint . --fix",
-    "eslint:check": "npx eslint .",
+    "format": "npx biome format --write .",
+    "format:check": "npx biome format .",
     "generate-docs": "rm -rf ./doc/; npx jsdoc --configure .jsdoc.json --verbose",
-    "lint": "npm run prettier && npm run eslint",
-    "prettier": "npx prettier --ignore-path .gitignore --write \"**/*{.js,.mjs,.ts,.css,.json}\"",
-    "prettier:check": "npx prettier --check --ignore-path .gitignore \"**/*{.js,.mjs,.ts,.css,.json}\"",
+    "lint": "npx biome check --fix .",
+    "lint:check": "npx biome check .",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
-    "@eslint/js": "^9.0.0",
+    "@biomejs/biome": "^2.4.8",
+    "@typescript/native-preview": "^7.0.0-dev.20260320.1",
     "@vitest/coverage-v8": "^3.0.0",
     "esbuild": "^0.27.3",
-    "eslint": "^9.0.0",
-    "eslint-config-prettier": "^9.0.0",
-    "globals": "^15.0.0",
     "jsdoc": "^3.6.4",
     "minami": "^1.2.3",
-    "prettier": "^3.0.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.57.0",
     "vitest": "^3.0.0"
   }
 }

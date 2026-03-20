@@ -22,9 +22,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import BitArray from './bitarray';
+
 import { BaseFileReader } from './basefilereader';
-import { endianness, ab2str, getInt64 } from './util';
+import BitArray from './bitarray';
+import { ab2str, endianness, getInt64 } from './util';
 
 export type ExtHeaderType =
   | 'dict'
@@ -143,7 +144,7 @@ class BlueHeader {
   ext_start!: number;
   ext_size!: number;
   type!: number;
-  'class'!: number;
+  class!: number;
   format!: string;
   timecode!: number;
   xstart!: number;
@@ -190,16 +191,16 @@ class BlueHeader {
     this.ext_start = dvhdr.getInt32(24, littleEndianHdr);
     this.ext_size = dvhdr.getInt32(28, littleEndianHdr);
     this.type = dvhdr.getUint32(48, littleEndianHdr);
-    this['class'] = this.type / 1000;
+    this.class = this.type / 1000;
     this.format = ab2str(this.buf.slice(52, 54));
     this.timecode = dvhdr.getFloat64(56, littleEndianHdr);
-    if (this['class'] === 1) {
+    if (this.class === 1) {
       this.xstart = dvhdr.getFloat64(0x100, littleEndianHdr);
       this.xdelta = dvhdr.getFloat64(0x100 + 8, littleEndianHdr);
       this.xunits = dvhdr.getInt32(0x100 + 16, littleEndianHdr);
       this.yunits = dvhdr.getInt32(0x100 + 40, littleEndianHdr);
       this.subsize = 1;
-    } else if (this['class'] === 2) {
+    } else if (this.class === 2) {
       this.xstart = dvhdr.getFloat64(0x100, littleEndianHdr);
       this.xdelta = dvhdr.getFloat64(0x100 + 8, littleEndianHdr);
       this.xunits = dvhdr.getInt32(0x100 + 16, littleEndianHdr);
@@ -234,9 +235,9 @@ class BlueHeader {
     this.bps = BlueHeader._BPS[this.format[1]!]!;
     this.bpa = this.spa * this.bps;
 
-    if (this['class'] === 1) {
+    if (this.class === 1) {
       this.ape = 1;
-    } else if (this['class'] === 2) {
+    } else if (this.class === 2) {
       this.ape = this.subsize;
     }
 
@@ -316,7 +317,7 @@ class BlueHeader {
         dic_index[tag] = 1;
       } else {
         dic_index[tag]!++;
-        tag = '' + tag + dic_index[tag]!;
+        tag = `${tag}${dic_index[tag]!}`;
       }
       dict_keywords[tag] = data;
       keywords.push({
@@ -402,4 +403,4 @@ class BlueFileReader extends BaseFileReader<BlueHeader, BlueHeaderOptions> {
   }
 }
 
-export { BlueHeader, BlueFileReader };
+export { BlueFileReader, BlueHeader };

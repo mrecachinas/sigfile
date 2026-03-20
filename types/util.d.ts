@@ -46,4 +46,4 @@ declare function ab2str(buf: ArrayBuffer, apply?: boolean): string;
 declare function str2ab(str: string): ArrayBuffer;
 declare function pow2(n: number): number;
 declare function parseURL(url: string): ParsedURL;
-export { applySupportsTypedArray, endianness, update, getInt64, ab2str, str2ab, pow2, parseURL, };
+export { ab2str, applySupportsTypedArray, endianness, getInt64, parseURL, pow2, str2ab, update, };

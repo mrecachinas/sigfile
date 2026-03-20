@@ -1,12 +1,12 @@
-import * as esbuild from "esbuild";
+import * as esbuild from 'esbuild';
 
 const entries = [
-  { entryPoint: "src/index.ts", name: "sigfile" },
-  { entryPoint: "src/bluefile.ts", name: "bluefile" },
-  { entryPoint: "src/matfile.ts", name: "matfile" },
+  { entryPoint: 'src/index.ts', name: 'sigfile' },
+  { entryPoint: 'src/bluefile.ts', name: 'bluefile' },
+  { entryPoint: 'src/matfile.ts', name: 'matfile' },
 ];
 
-const isProduction = process.env.NODE_ENV === "production";
+const isProduction = process.env.NODE_ENV === 'production';
 
 // esbuild doesn't support UMD natively, so we build IIFE and wrap it
 function umdWrapper(name) {
@@ -25,8 +25,8 @@ for (const { entryPoint, name } of entries) {
     entryPoints: [entryPoint],
     bundle: true,
     sourcemap: true,
-    target: "es2022",
-    platform: "neutral",
+    target: 'es2022',
+    platform: 'neutral',
     minify: isProduction,
   };
 
@@ -34,7 +34,7 @@ for (const { entryPoint, name } of entries) {
   const umd = umdWrapper(name);
   await esbuild.build({
     ...shared,
-    format: "iife",
+    format: 'iife',
     globalName: name,
     outfile: `dist/${name}.js`,
     banner: { js: umd.banner },
@@ -44,7 +44,7 @@ for (const { entryPoint, name } of entries) {
   // ESM
   await esbuild.build({
     ...shared,
-    format: "esm",
+    format: 'esm',
     outfile: `dist/${name}.mjs`,
   });
 }

@@ -22,8 +22,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import BitArray from './bitarray';
 import { BaseFileReader } from './basefilereader';
+import BitArray from './bitarray';
 export type ExtHeaderType = 'dict' | 'json' | 'list' | 'XMTable' | 'JSON' | 'DICT' | Record<string, never>;
 export interface BlueHeaderOptions {
     ext_header_type?: ExtHeaderType;
@@ -53,7 +53,7 @@ declare class BlueHeader {
     ext_start: number;
     ext_size: number;
     type: number;
-    'class': number;
+    class: number;
     format: string;
     timecode: number;
     xstart: number;
@@ -84,4 +84,4 @@ declare class BlueHeader {
 declare class BlueFileReader extends BaseFileReader<BlueHeader, BlueHeaderOptions> {
     constructor(options?: BlueHeaderOptions);
 }
-export { BlueHeader, BlueFileReader };
+export { BlueFileReader, BlueHeader };

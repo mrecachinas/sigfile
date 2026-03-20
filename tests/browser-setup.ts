@@ -1,6 +1,6 @@
-import http from 'http';
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import http from 'node:http';
+import path from 'node:path';
 
 export default async function () {
   const server = http.createServer((req, res) => {
@@ -18,7 +18,7 @@ export default async function () {
     server.listen(3000, resolve);
   });
 
-  return async function () {
+  return async () => {
     await new Promise<void>((resolve) => {
       server.close(() => resolve());
     });

@@ -1,11 +1,11 @@
 import {
-  update,
+  ab2str,
   applySupportsTypedArray,
   getInt64,
-  ab2str,
-  str2ab,
-  pow2,
   parseURL,
+  pow2,
+  str2ab,
+  update,
 } from '../src/util';
 
 describe('update', () => {

@@ -28,8 +28,8 @@ class BitArray {
         }
       },
       set(obj: BitArray, prop: string | symbol, value: unknown): boolean {
-        const propInt = parseInt(String(prop));
-        if (isNaN(propInt)) {
+        const propInt = parseInt(String(prop), 10);
+        if (Number.isNaN(propInt)) {
           return false;
         } else {
           obj.setBit(propInt, value as number);

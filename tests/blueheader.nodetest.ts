@@ -1,4 +1,4 @@
-import { readFile } from 'fs/promises';
+import { readFile } from 'node:fs/promises';
 import { BlueHeader } from '../src/bluefile';
 
 const DATA_DIR = './tests/dat';
@@ -81,7 +81,7 @@ describe('BlueHeader', () => {
     expect(hdr.datarep).to.eql('EEEI');
     expect(hdr.timecode).to.eql(0);
     expect(hdr.type).to.eql(1000);
-    expect(hdr['class']).to.eql(1);
+    expect(hdr.class).to.eql(1);
     expect(hdr.format).to.eql('SP');
     expect(hdr.spa).to.eql(1);
     expect(hdr.bps).to.eql(0.125);
@@ -137,7 +137,7 @@ describe('BlueHeader', () => {
     expect(hdr.datarep).to.equal('EEEI');
     expect(hdr.timecode).to.equal(0);
     expect(hdr.type).to.equal(1000);
-    expect(hdr['class']).to.equal(1);
+    expect(hdr.class).to.equal(1);
     expect(hdr.format).to.equal('CF');
     expect(hdr.spa).to.equal(2);
     expect(hdr.bps).to.equal(4);
@@ -169,7 +169,7 @@ describe('BlueHeader', () => {
     expect(hdr.datarep).to.equal('EEEI');
     expect(hdr.timecode).to.equal(0);
     expect(hdr.type).to.equal(1000);
-    expect(hdr['class']).to.equal(1);
+    expect(hdr.class).to.equal(1);
     expect(hdr.format).to.equal('SI');
     expect(hdr.spa).to.equal(1);
     expect(hdr.bps).to.equal(2);

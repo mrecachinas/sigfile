@@ -59,7 +59,7 @@ function update(
   src: Record<string, unknown>,
 ): Record<string, unknown> {
   for (const prop in src) {
-    if (Object.prototype.hasOwnProperty.call(src, prop)) {
+    if (Object.hasOwn(src, prop)) {
       const val = src[prop];
       if (typeof val === 'object') {
         if (dst[prop] === undefined) {
@@ -82,7 +82,7 @@ function getInt64(
   index: number,
   littleEndian: boolean,
 ): number {
-  const MAX_INT = Math.pow(2, 53);
+  const MAX_INT = 2 ** 53;
   const [highIndex, lowIndex] = littleEndian ? [4, 0] : [0, 4];
   const high = dataView.getInt32(index + highIndex, littleEndian);
   const low = dataView.getInt32(index + lowIndex, littleEndian);
@@ -160,7 +160,10 @@ function pow2(n: number): number {
   if (n >= 0 && n < 31) {
     return 1 << n;
   }
-  return _pow2Cache[n] || (_pow2Cache[n] = Math.pow(2, n));
+  if (_pow2Cache[n] === undefined) {
+    _pow2Cache[n] = 2 ** n;
+  }
+  return _pow2Cache[n];
 }
 
 function parseURL(url: string): ParsedURL {
@@ -190,12 +193,12 @@ function parseURL(url: string): ParsedURL {
 }
 
 export {
+  ab2str,
   applySupportsTypedArray,
   endianness,
-  update,
   getInt64,
-  ab2str,
-  str2ab,
-  pow2,
   parseURL,
+  pow2,
+  str2ab,
+  update,
 };

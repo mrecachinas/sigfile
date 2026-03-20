@@ -23,7 +23,7 @@
  * under the License.
  */
 import { BaseFileReader } from './basefilereader';
-import { endianness, ab2str, getInt64 } from './util';
+import { ab2str, endianness, getInt64 } from './util';
 
 export type MatTypedArray =
   | Int8Array
@@ -172,9 +172,7 @@ class MatHeader {
       const littleEndianHdr = this.datarep === 'IM';
       const littleEndianData = this.datarep === 'IM';
 
-      this.headerList = this.headerStr.split(',').map(function (str) {
-        return str.trim();
-      });
+      this.headerList = this.headerStr.split(',').map((str) => str.trim());
       this.matfile = this.headerList[0]!;
       this.platform = this.headerList[1]!;
       this.createdOn = this.headerList[2]!;
@@ -378,8 +376,7 @@ class MatHeader {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface MatFileReaderOptions {}
+export type MatFileReaderOptions = Record<string, never>;
 
 class MatFileReader extends BaseFileReader<MatHeader, MatFileReaderOptions> {
   constructor(options?: MatFileReaderOptions) {
@@ -387,4 +384,4 @@ class MatFileReader extends BaseFileReader<MatHeader, MatFileReaderOptions> {
   }
 }
 
-export { MatHeader, MatFileReader };
+export { MatFileReader, MatHeader };

@@ -1,6 +1,6 @@
-import { bluefile } from '../src/index';
-import type { BlueHeader } from '../src/bluefile';
 import type BitArray from '../src/bitarray';
+import type { BlueHeader } from '../src/bluefile';
+import { bluefile } from '../src/index';
 
 const BASE_URL = 'http://localhost:3000/tests/dat';
 
@@ -29,7 +29,7 @@ describe('bluefile.BlueFileReader', () => {
     expect(hdr!.datarep).to.equal('EEEI');
     expect(hdr!.timecode).to.equal(0);
     expect(hdr!.type).to.equal(1000);
-    expect(hdr!['class']).to.equal(1);
+    expect(hdr!.class).to.equal(1);
     expect(hdr!.format).to.equal('SD');
     expect(hdr!.spa).to.equal(1);
     expect(hdr!.bps).to.equal(8);
@@ -81,7 +81,7 @@ describe('bluefile.BlueFileReader', () => {
     expect(hdr!.datarep).to.equal('EEEI');
     expect(hdr!.timecode).to.equal(0);
     expect(hdr!.type).to.equal(1000);
-    expect(hdr!['class']).to.equal(1);
+    expect(hdr!.class).to.equal(1);
     expect(hdr!.format).to.equal('CF');
     expect(hdr!.spa).to.equal(2);
     expect(hdr!.bps).to.equal(4);
@@ -117,11 +117,11 @@ describe('bluefile.BlueFileReader', () => {
       if (i <= 20) {
         strpad = '';
       }
-      const str = '' + i;
+      const str = `${i}`;
       const keypad = '000';
       const ans = keypad.substring(0, keypad.length - str.length) + str;
-      const key = 'KEYWORD_' + ans;
-      let value = '[value___' + ans + strpad + ']';
+      const key = `KEYWORD_${ans}`;
+      let value = `[value___${ans}${strpad}]`;
       if (i > 50 && i <= 100) {
         value += ' ';
       }
@@ -272,7 +272,7 @@ describe('bluefile.BlueFileReader', () => {
     expect(hdr!.datarep).to.eql('EEEI');
     expect(hdr!.timecode).to.eql(0);
     expect(hdr!.type).to.eql(1000);
-    expect(hdr!['class']).to.eql(1);
+    expect(hdr!.class).to.eql(1);
     expect(hdr!.format).to.eql('SP');
     expect(hdr!.spa).to.eql(1);
     expect(hdr!.bps).to.eql(0.125);

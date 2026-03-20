@@ -1,6 +1,6 @@
-import { readFile } from 'fs/promises';
 import { Blob } from 'node:buffer';
-import { MatHeader, MatFileReader } from '../src/matfile';
+import { readFile } from 'node:fs/promises';
+import { MatFileReader, MatHeader } from '../src/matfile';
 
 const DATA_DIR = './tests/dat';
 

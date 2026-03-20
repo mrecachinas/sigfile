@@ -1,5 +1,5 @@
-import { readFile } from 'fs/promises';
 import { Blob } from 'node:buffer';
+import { readFile } from 'node:fs/promises';
 import { BlueFileReader, BlueHeader } from '../src/bluefile';
 
 const DATA_DIR = './tests/dat';
