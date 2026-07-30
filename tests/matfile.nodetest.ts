@@ -1,6 +1,6 @@
-import { readFile } from 'fs/promises';
 import { Blob } from 'node:buffer';
-import { MatHeader, MatFileReader } from '../src/matfile';
+import { readFile } from 'node:fs/promises';
+import { MatFileReader, MatHeader } from '../src/matfile';
 
 const DATA_DIR = './tests/dat';
 
@@ -13,7 +13,7 @@ describe('MatHeader', () => {
     );
     const hdr = new MatHeader(buf);
 
-    expect(hdr.buf.byteLength).to.equal(16208);
+    expect(hdr.buf!.byteLength).to.equal(16208);
     expect(hdr.version).to.equal(256);
     expect(hdr.versionName).to.equal('MAT-file');
     expect(hdr.datarep).to.equal('IM');
@@ -32,7 +32,6 @@ describe('MatHeader', () => {
 
     expect(hdr.dview).to.not.be.undefined;
     expect(hdr.dview.length).to.be.greaterThan(0);
-    // Sine wave values should be in [-1, 1]
     for (let i = 0; i < hdr.dview.length; i++) {
       expect(hdr.dview[i]).to.be.at.least(-1.0);
       expect(hdr.dview[i]).to.be.at.most(1.0);
@@ -50,7 +49,7 @@ describe('MatHeader', () => {
     expect(hdr.headerList).to.be.an('array');
     expect(hdr.headerList.length).to.be.greaterThan(0);
     expect(hdr.arraySize).to.be.greaterThan(0);
-    expect(hdr.dataType).to.equal(14); // miMATRIX
+    expect(hdr.dataType).to.equal(14);
   });
 
   it('should handle null buffer', () => {
@@ -69,18 +68,18 @@ describe('MatFileReader', () => {
 
   it('should read a mat-file from a Blob', async () => {
     const data = await readFile(`${DATA_DIR}/sin.mat`);
-    const blob = new Blob([data]);
+    const blob = new Blob([data]) as Blob & { name: string };
     blob.name = 'sin.mat';
 
     const mfr = new MatFileReader();
-    const hdr = await new Promise((resolve) => {
+    const hdr = await new Promise<MatHeader | null>((resolve) => {
       mfr.read(blob, resolve);
     });
 
     expect(hdr).to.not.be.null;
-    expect(hdr.file_name).to.equal('sin.mat');
-    expect(hdr.versionName).to.equal('MAT-file');
-    expect(hdr.dview).to.not.be.undefined;
-    expect(hdr.dview.length).to.be.greaterThan(0);
+    expect(hdr!.file_name).to.equal('sin.mat');
+    expect(hdr!.versionName).to.equal('MAT-file');
+    expect(hdr!.dview).to.not.be.undefined;
+    expect(hdr!.dview.length).to.be.greaterThan(0);
   });
 });

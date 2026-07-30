@@ -1,4 +1,4 @@
-import { readFile } from 'fs/promises';
+import { readFile } from 'node:fs/promises';
 import { BlueHeader } from '../src/bluefile';
 
 const DATA_DIR = './tests/dat';
@@ -19,7 +19,7 @@ describe('BlueHeader', () => {
     expect(hdr.data_start).to.equal(512);
     expect(hdr.data_size).to.equal(0);
 
-    const keywords = {
+    const keywords: Record<string, unknown> = {
       B_TEST: 123,
       I_TEST: 1337,
       L_TEST: 113355,
@@ -31,8 +31,10 @@ describe('BlueHeader', () => {
       B_TEST2: 99,
       STRING_TEST2: 'Goodbye World',
     };
-    for (let prop in keywords) {
-      expect(hdr.ext_header[prop]).to.equal(keywords[prop]);
+    for (const prop in keywords) {
+      expect((hdr.ext_header as Record<string, unknown>)[prop]).to.equal(
+        keywords[prop],
+      );
     }
   });
   it('should load type 1000 SD data correctly from buffer', async () => {
@@ -79,7 +81,7 @@ describe('BlueHeader', () => {
     expect(hdr.datarep).to.eql('EEEI');
     expect(hdr.timecode).to.eql(0);
     expect(hdr.type).to.eql(1000);
-    expect(hdr['class']).to.eql(1);
+    expect(hdr.class).to.eql(1);
     expect(hdr.format).to.eql('SP');
     expect(hdr.spa).to.eql(1);
     expect(hdr.bps).to.eql(0.125);
@@ -96,14 +98,30 @@ describe('BlueHeader', () => {
     expect(hdr.yunits).to.eql(0);
     expect(hdr.data_start).to.eql(512.0);
     expect(hdr.data_size).to.eql(128);
-    expect(hdr.dview.getBit(0)).to.eql(0);
-    expect(hdr.dview.getBit(1)).to.eql(1);
-    expect(hdr.dview.getBit(2)).to.eql(0);
-    expect(hdr.dview.getBit(3)).to.eql(0);
-    expect(hdr.dview.getBit(4)).to.eql(0);
-    expect(hdr.dview.getBit(5)).to.eql(0);
-    expect(hdr.dview.getBit(6)).to.eql(1);
-    expect(hdr.dview.getBit(7)).to.eql(0);
+    expect((hdr.dview as import('../src/bitarray').default).getBit(0)).to.eql(
+      0,
+    );
+    expect((hdr.dview as import('../src/bitarray').default).getBit(1)).to.eql(
+      1,
+    );
+    expect((hdr.dview as import('../src/bitarray').default).getBit(2)).to.eql(
+      0,
+    );
+    expect((hdr.dview as import('../src/bitarray').default).getBit(3)).to.eql(
+      0,
+    );
+    expect((hdr.dview as import('../src/bitarray').default).getBit(4)).to.eql(
+      0,
+    );
+    expect((hdr.dview as import('../src/bitarray').default).getBit(5)).to.eql(
+      0,
+    );
+    expect((hdr.dview as import('../src/bitarray').default).getBit(6)).to.eql(
+      1,
+    );
+    expect((hdr.dview as import('../src/bitarray').default).getBit(7)).to.eql(
+      0,
+    );
   });
   it('should parse complex float data from buffer', async () => {
     const data = await readFile(`${DATA_DIR}/pulse_cx.tmp`);
@@ -119,7 +137,7 @@ describe('BlueHeader', () => {
     expect(hdr.datarep).to.equal('EEEI');
     expect(hdr.timecode).to.equal(0);
     expect(hdr.type).to.equal(1000);
-    expect(hdr['class']).to.equal(1);
+    expect(hdr.class).to.equal(1);
     expect(hdr.format).to.equal('CF');
     expect(hdr.spa).to.equal(2);
     expect(hdr.bps).to.equal(4);
@@ -151,7 +169,7 @@ describe('BlueHeader', () => {
     expect(hdr.datarep).to.equal('EEEI');
     expect(hdr.timecode).to.equal(0);
     expect(hdr.type).to.equal(1000);
-    expect(hdr['class']).to.equal(1);
+    expect(hdr.class).to.equal(1);
     expect(hdr.format).to.equal('SI');
     expect(hdr.spa).to.equal(1);
     expect(hdr.bps).to.equal(2);
@@ -168,11 +186,11 @@ describe('BlueHeader', () => {
     expect(hdr.yunits).to.equal(0);
     expect(hdr.data_start).to.equal(512.0);
     expect(hdr.data_size).to.equal(2048);
-    expect(hdr.dview[0]).to.equal(0);
-    expect(hdr.dview[1]).to.equal(1);
-    expect(hdr.dview[2]).to.equal(2);
-    expect(hdr.dview[1021]).to.equal(1021);
-    expect(hdr.dview[1022]).to.equal(1022);
-    expect(hdr.dview[1023]).to.equal(1023);
+    expect((hdr.dview as Int16Array)[0]).to.equal(0);
+    expect((hdr.dview as Int16Array)[1]).to.equal(1);
+    expect((hdr.dview as Int16Array)[2]).to.equal(2);
+    expect((hdr.dview as Int16Array)[1021]).to.equal(1021);
+    expect((hdr.dview as Int16Array)[1022]).to.equal(1022);
+    expect((hdr.dview as Int16Array)[1023]).to.equal(1023);
   });
 });

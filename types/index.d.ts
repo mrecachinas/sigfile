@@ -1,6 +1,6 @@
 /**
  * @license
- * File: sigfile.js
+ * File: sigfile.ts
  * Copyright (c) 2012-2017, LGS Innovations Inc., All rights reserved.
  *
  * This file is part of SigFile.
@@ -22,8 +22,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+import { version } from '../package.json';
 import * as bluefile from './bluefile';
 import * as matfile from './matfile';
-import { version } from '../package.json';
-
 export { bluefile, matfile, version };
