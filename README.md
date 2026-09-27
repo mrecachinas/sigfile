@@ -63,14 +63,15 @@ const xhr = reader.read_http('https://example.com/data.tmp', (header, err) => {
 // error named 'AbortError', so cleanup code still runs.
 ```
 
-`read_http` uses `XMLHttpRequest`, so it works in browsers, Electron, and
-jsdom, including `file://` URLs where the environment allows them. It isn't
-available in plain Node.js; there, read the file yourself and pass the
-`ArrayBuffer` to `BlueHeader` as shown above.
-
 `read(file, onload)` and `readheader(file, onload)` work the same way for
 local `File` or `Blob` objects. `readheader` loads only the first 512 bytes,
 so `header.size` is set but `header.dview` is undefined.
+
+The readers use `XMLHttpRequest` and `FileReader`, so they work in browsers,
+Electron, and jsdom. `read_http` also loads `file://` URLs where the
+environment allows it. The readers aren't available in plain Node.js; there,
+read the file yourself and pass the `ArrayBuffer` to `BlueHeader` as shown
+above.
 
 Once a read starts, `onload` is called exactly once.
 

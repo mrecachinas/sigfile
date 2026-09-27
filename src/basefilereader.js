@@ -55,15 +55,17 @@ class BaseFileReader {
    */
   _read(theFile, onload, justHeader) {
     const blob = justHeader ? theFile.slice(0, 512) : theFile;
-
-    blob.arrayBuffer().then(
-      (buf) => {
-        this._parse(buf, onload, { file: theFile, file_name: theFile.name });
-      },
-      (err) => {
-        onload(null, err);
-      },
-    );
+    const reader = new FileReader();
+    reader.onload = () => {
+      this._parse(reader.result, onload, {
+        file: theFile,
+        file_name: theFile.name,
+      });
+    };
+    reader.onerror = () => {
+      onload(null, reader.error);
+    };
+    reader.readAsArrayBuffer(blob);
   }
 
   /**

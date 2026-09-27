@@ -1,4 +1,4 @@
-import { readArrayBuffer, readBlob } from './helpers';
+import { readArrayBuffer } from './helpers';
 import { MatHeader, MatFileReader } from '../src/matfile';
 
 describe('MatHeader', () => {
@@ -50,20 +50,5 @@ describe('MatFileReader', () => {
     const mfr = new MatFileReader(opts);
     expect(mfr.options).to.eql(opts);
     expect(mfr.header_class).to.equal(MatHeader);
-  });
-
-  it('should read a mat-file from a Blob', async () => {
-    const blob = await readBlob('sin.mat');
-
-    const mfr = new MatFileReader();
-    const hdr = await new Promise((resolve) => {
-      mfr.read(blob, resolve);
-    });
-
-    expect(hdr).to.not.be.null;
-    expect(hdr.file_name).to.equal('sin.mat');
-    expect(hdr.versionName).to.equal('MAT-file');
-    expect(hdr.dview).to.not.be.undefined;
-    expect(hdr.dview.length).to.be.greaterThan(0);
   });
 });
