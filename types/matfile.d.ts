@@ -7,6 +7,7 @@ type TypedArray =
   | Uint16Array
   | Int32Array
   | Uint32Array
+  | Float32Array
   | Float64Array;
 
 export declare class MatHeader {
@@ -25,8 +26,27 @@ export declare class MatHeader {
   dataType: number;
   dataTypeName: string;
   arraySize: number;
+  /** Name of the MATLAB variable. */
+  arrayName: string;
+  /** MATLAB class, e.g. 'mxDOUBLE_CLASS' or 'mxSPARSE_CLASS'. */
+  arrayClassName: string;
+  /** Array dimensions, e.g. [rows, cols]. */
+  dims: number[];
+  complex: boolean;
+  global: boolean;
+  logical: boolean;
+  /**
+   * Real values in MATLAB's column-major order. Sparse arrays are expanded
+   * to dense; char arrays hold character codes.
+   */
   dview: TypedArray;
+  /** Imaginary values, for complex arrays. */
+  dviewImag?: TypedArray;
 
+  /**
+   * @throws Error for compressed (-v7) or HDF5 (-v7.3) MAT-files, and for
+   *   cell, struct, and object arrays.
+   */
   constructor(buf: ArrayBuffer | null);
 
   createArray(
@@ -34,6 +54,7 @@ export declare class MatHeader {
     offset?: number,
     length?: number,
     type?: string,
+    littleEndian?: boolean,
   ): TypedArray;
   getDataWithType(
     dv: DataView,

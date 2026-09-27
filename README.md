@@ -75,6 +75,20 @@ above.
 
 Once a read starts, `onload` is called exactly once.
 
+## Supported formats
+
+**Bluefiles** (type 1000 and 2000): headers and data in either byte order
+(`EEEI` little-endian or `IEEE` big-endian). Data in the host's byte order is
+viewed in place; data in the other order is copied and byte-swapped.
+
+**MAT-files** (Level 5, `save -v6`): the first variable in the file, which may
+be a numeric, logical, char, or sparse array of any dimension, in either byte
+order. `header.dview` holds the real values in MATLAB's column-major order,
+with the shape in `header.dims`; complex arrays add `header.dviewImag`, and
+sparse arrays are expanded to dense. Compressed (`-v7`, MATLAB's default) and
+HDF5 (`-v7.3`) MAT-files, and cell, struct, and object arrays, throw an error;
+save with `-v6` instead.
+
 ## Upgrading from 0.1.x
 
 - `package.json` now has an `exports` map. The supported entry points are
@@ -84,3 +98,7 @@ Once a read starts, `onload` is called exactly once.
   This includes parse errors, which 0.1.x threw from inside the load handler,
   aborted requests (`err.name === 'AbortError'`), and timeouts
   (`'TimeoutError'`). 0.1.x never reported aborts or timeouts.
+- Packed-bit (`SP`) bluefiles: `dview` now covers only the data. 0.1.x also
+  included the bits of the file's header, so `size` didn't match `data_size`.
+- MAT-file values use the array's MATLAB class, such as `Float64Array` for
+  doubles, even when MATLAB stored them in a smaller type such as `miUINT8`.

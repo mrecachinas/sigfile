@@ -2,6 +2,8 @@ import {
   update,
   applySupportsTypedArray,
   getInt64,
+  getUint64,
+  swapBytes,
   ab2str,
   str2ab,
   pow2,
@@ -123,6 +125,61 @@ describe('getInt64', () => {
     dataView.setInt32(4, 1337);
     const result = getInt64(dataView, 0, true);
     expect(result).to.equal(Infinity);
+  });
+});
+
+describe('64-bit integers', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+  const view = (value, littleEndian) => {
+    const dv = new DataView(new ArrayBuffer(8));
+    dv.setBigInt64(0, BigInt(value), littleEndian);
+    return dv;
+  };
+  for (const littleEndian of [true, false]) {
+    it(`getInt64 should read values whose low word has the top bit set (${littleEndian ? 'LE' : 'BE'})`, () => {
+      expect(getInt64(view(-1, littleEndian), 0, littleEndian)).to.equal(-1);
+      expect(
+        getInt64(view(0xffffffff, littleEndian), 0, littleEndian),
+      ).to.equal(0xffffffff);
+      expect(
+        getInt64(view(-(2 ** 40) - 1, littleEndian), 0, littleEndian),
+      ).to.equal(-(2 ** 40) - 1);
+    });
+    it(`getUint64 should read unsigned values (${littleEndian ? 'LE' : 'BE'})`, () => {
+      const dv = new DataView(new ArrayBuffer(8));
+      dv.setBigUint64(0, 2n ** 32n + 5n, littleEndian);
+      expect(getUint64(dv, 0, littleEndian)).to.equal(2 ** 32 + 5);
+      dv.setBigUint64(0, 2n ** 63n, littleEndian);
+      expect(getUint64(dv, 0, littleEndian)).to.equal(Infinity);
+    });
+  }
+  it('getInt64 should return -Infinity below -2^53', () => {
+    expect(getInt64(view(-(2 ** 53), true), 0, true)).to.equal(-Infinity);
+  });
+});
+
+describe('swapBytes', () => {
+  it('should reverse the bytes of each element into a new buffer', () => {
+    const src = new Uint8Array([9, 1, 2, 3, 4, 5, 6, 7, 8]).buffer;
+    expect(Array.from(new Uint8Array(swapBytes(src, 1, 2, 4)))).to.eql([
+      4, 3, 2, 1, 8, 7, 6, 5,
+    ]);
+    expect(Array.from(new Uint8Array(swapBytes(src, 1, 4, 2)))).to.eql([
+      2, 1, 4, 3, 6, 5, 8, 7,
+    ]);
+    expect(Array.from(new Uint8Array(src))).to.eql([9, 1, 2, 3, 4, 5, 6, 7, 8]);
+  });
+  it('should reject unsupported widths', () => {
+    expect(() => swapBytes(new ArrayBuffer(3), 0, 1, 3)).to.throw(/3-byte/);
+  });
+  it('should round-trip doubles', () => {
+    const values = new Float64Array([Math.PI, -0.5, 1e300]);
+    const dv = new DataView(swapBytes(values.buffer, 0, 3, 8));
+    expect([0, 8, 16].map((i) => dv.getFloat64(i, false))).to.eql(
+      Array.from(values),
+    );
   });
 });
 

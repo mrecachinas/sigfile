@@ -16,18 +16,27 @@ class BitArray {
    * const u8_arr = new Uint8Array([255, 230]);
    * const arr = new BitArray(u8_arr.buffer);
    *
+   * @example <caption>Viewing part of an ArrayBuffer, like a typed array</caption>
+   * // 16 bits starting at byte 512
+   * const arr = new BitArray(buffer, 512, 16);
+   *
    * @memberOf BitArray
    * @param {ArrayBuffer|number} buf - Either an existing buffer containing data
    *                                   or a number indicating the size of the BitArray
+   * @param {number} [byteOffset=0] - Byte offset into `buf` where the bits start
+   * @param {number} [length] - Number of bits; defaults to the rest of `buf`
    * @returns {BitArray}
    */
-  constructor(buf) {
+  constructor(buf, byteOffset, length) {
     if (!(buf instanceof ArrayBuffer) && typeof buf === 'number') {
       this.buffer = new ArrayBuffer(buf / 8);
       this.u8 = new Uint8Array(this.buffer);
     } else {
       this.buffer = buf;
-      this.u8 = new Uint8Array(buf);
+      this.u8 =
+        length === undefined
+          ? new Uint8Array(buf, byteOffset || 0)
+          : new Uint8Array(buf, byteOffset || 0, Math.ceil(length / 8));
     }
     return new Proxy(this, {
       get(obj, prop) {

@@ -24,6 +24,12 @@ mfr.read(new Blob([]), (hdr) => {
   if (hdr) {
     const m: MatHeader = hdr;
     const data: Uint32Array | Float64Array | Int8Array = m.dview as Float64Array;
+    const shape: number[] = m.dims;
+    const name: string = m.arrayName;
+    if (m.complex) {
+      // @ts-expect-error dviewImag is only present for complex arrays
+      const imag: Float64Array = m.dviewImag;
+    }
   }
 });
 

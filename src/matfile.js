@@ -23,21 +23,29 @@
  * under the License.
  */
 import { BaseFileReader } from './basefilereader';
-import { endianness, ab2str, getInt64 } from './util';
+import { endianness, ab2str, getInt64, getUint64, swapBytes } from './util';
 
 /**
- * MAT-files are a binary format directly supported by SigPlot.  A MAT-file consists of a 132-byte header
- * followed by binary data.
+ * MAT-files are a binary format directly supported by SigPlot.  A Level 5
+ * MAT-file consists of a 128-byte header followed by data elements.
+ * The first data element (usually an miMATRIX) is parsed into this header.
  * For more information on MAT-files, please visit https://www.mathworks.com/help/pdf_doc/matlab/matfile_format.pdf
  *
  * | Offset | Name        | Size |    Type    |    Description |
  * |--------|:------------|:-----|:-----------|:---------------|
- * | 0      | header      | 115  |  char[115] |    Header      |
- * | 116    | subsys      |   7  |  char[7]   |                |
+ * | 0      | header      | 116  |  char[116] |    Header      |
+ * | 116    | subsys      |   8  |  char[8]   |                |
  * | 124    | version     |   2  |  int_2     |                |
  * | 126    | endianness  |   2  |  char[2]   |                |
- * | 128    | data_offset |   4  |  int_4     |                |
- * | 132    | byte_offset |   4  |  int_4     |                |
+ * | 128    | data_type   |   4  |  int_4     |                |
+ * | 132    | byte_count  |   4  |  int_4     |                |
+ *
+ * Numeric, logical, char, and sparse arrays of any dimension are supported,
+ * in either byte order. `dview` always holds the real values, flattened in
+ * MATLAB's column-major order; `dims` gives the shape and `dviewImag` the
+ * imaginary part of complex arrays. Sparse arrays are expanded to dense.
+ * Compressed (-v7, the MATLAB default) and HDF5 (-v7.3) MAT-files are not
+ * supported; save with -v6 instead.
  */
 class MatHeader {
   /**
@@ -53,17 +61,24 @@ class MatHeader {
   static versionNames = { 256: 'MAT-file' };
 
   /**
+   * Typed array for each MAT data type. 64-bit integers have no ES5 typed
+   * array, so they are read value by value with _MAT_TO_DATAVIEW.
+   *
    * @memberOf matfile
    * @private
    */
   static _MAT_TO_TYPEDARRAY = {
     miINT8: Int8Array,
     miUINT8: Uint8Array,
-    miInt16: Int16Array,
+    miINT16: Int16Array,
     miUINT16: Uint16Array,
     miINT32: Int32Array,
     miUINT32: Uint32Array,
+    miSINGLE: Float32Array,
     miDOUBLE: Float64Array,
+    miUTF8: Uint8Array,
+    miUTF16: Uint16Array,
+    miUTF32: Uint32Array,
   };
 
   static _MAT_TO_DATAVIEW = {
@@ -76,8 +91,33 @@ class MatHeader {
     miSINGLE: 'getFloat32',
     miDOUBLE: 'getFloat64',
     miINT64: getInt64,
-    /* TODO: "miUINT64", "miMATRIX", "miCOMPRESSED"
-             "miUTF8", "miUTF16", "miUTF32" */
+    miUINT64: getUint64,
+    miUTF8: 'getUint8',
+    miUTF16: 'getUint16',
+    miUTF32: 'getUint32',
+  };
+
+  /**
+   * Typed array for the values of each numeric MATLAB class. MATLAB may
+   * store values in a smaller data type than their class (for example a
+   * double array of small integers as miUINT8); they are converted back.
+   * 64-bit classes use Float64Array, so values beyond 2^53 become Infinity.
+   *
+   * @memberOf matfile
+   * @private
+   */
+  static _CLASS_TO_TYPEDARRAY = {
+    mxSPARSE_CLASS: Float64Array,
+    mxDOUBLE_CLASS: Float64Array,
+    mxSINGLE_CLASS: Float32Array,
+    mxINT8_CLASS: Int8Array,
+    mxUINT8_CLASS: Uint8Array,
+    mxINT16_CLASS: Int16Array,
+    mxUINT16_CLASS: Uint16Array,
+    mxINT32_CLASS: Int32Array,
+    mxUINT32_CLASS: Uint32Array,
+    mxINT64_CLASS: Float64Array,
+    mxUINT64_CLASS: Float64Array,
   };
 
   /**
@@ -137,15 +177,15 @@ class MatHeader {
     },
     16: {
       name: 'miUTF8',
-      size: null,
+      size: 1,
     },
     17: {
       name: 'miUTF16',
-      size: null,
+      size: 2,
     },
     18: {
       name: 'miUTF32',
-      size: null,
+      size: 4,
     },
   };
 
@@ -206,12 +246,6 @@ class MatHeader {
    * Outermost data type and number of bytes. For data plottable in SigPlot this will
    * most likely be a 1D array. The associated MATLAB type will most likely be "miMATRIX".
    */
-
-  /**
-   * WARNING: type "miCOMPRESSED" is the default for MATLAB files above version 6. These
-   * compressed files are currently UNREADABLE by this program as the file must be
-   * decompressed before reading.
-   */
   static firstDataTypeOffsetBegin = 129;
   static firstDataTypeOffsetEnd = 132;
 
@@ -221,7 +255,18 @@ class MatHeader {
   /**
    * Create matfile header and attach data buffer
    * @memberOf MatHeader
-   * @param {array} buf - Data bffer
+   * @param {ArrayBuffer} buf - Data buffer
+   *
+   * @property {string} arrayName - name of the MATLAB variable
+   * @property {string} arrayClassName - MATLAB class, e.g. 'mxDOUBLE_CLASS'
+   * @property {number[]} dims - array dimensions, e.g. [rows, cols]
+   * @property {boolean} complex - whether the array has an imaginary part
+   * @property {boolean} global - whether the variable is global
+   * @property {boolean} logical - whether the array is logical
+   * @property {TypedArray} dview - real values in column-major order
+   * @property {TypedArray} [dviewImag] - imaginary values of complex arrays
+   * @throws {Error} for compressed (-v7) or HDF5 (-v7.3) MAT-files, and
+   *   for cell, struct, and object arrays
    */
   constructor(buf) {
     this.file = null;
@@ -240,8 +285,7 @@ class MatHeader {
           MatHeader.endianCharsEnd,
         ),
       );
-      const littleEndianHdr = this.datarep === 'IM';
-      const littleEndianData = this.datarep === 'IM';
+      const littleEndian = this.datarep === 'IM';
 
       this.headerList = this.headerStr.split(',').map(function (str) {
         return str.trim();
@@ -257,137 +301,194 @@ class MatHeader {
       );
       this.version = dvhdr.getUint16(
         MatHeader.versionOffsetBegin - 1,
-        littleEndianHdr,
+        littleEndian,
       );
       this.versionName = MatHeader.versionNames[this.version];
-
-      this.dataType = dvhdr.getUint32(
-        MatHeader.firstDataTypeOffsetBegin - 1,
-        littleEndianHdr,
-      );
-      this.dataTypeName = MatHeader.dataTypeNames[this.dataType].name;
-      this.arraySize = dvhdr.getUint32(
-        MatHeader.numBytesOffsetBegin - 1,
-        littleEndianHdr,
-      );
-
-      const beginArray = MatHeader.numBytesOffsetEnd + 1; // eslint-disable-line no-unused-vars
-
-      // Start reading the file linearly from beginning and inc index as you go...
-      let currIndex = MatHeader.numBytesOffsetEnd + 1;
-      const typeNum = dvhdr.getUint32(currIndex - 1, littleEndianHdr);
-      const typeName = MatHeader.dataTypeNames[typeNum].name;
-      const typeSize = MatHeader.dataTypeNames[typeNum].size;
-      currIndex += 4;
-
-      // bytes per ``typeName``
-      const _flagLength = this.getDataWithType(
-        dvhdr,
-        typeName,
-        currIndex - 1,
-        littleEndianData,
-      );
-      currIndex += typeSize;
-
-      // Array flags
-      // If bit is set:
-      // - complex: the data element includes an imaginary part
-      // - global: "MATLAB loads the data element as a global variable in the base workspace"
-      // - logical: indicates the array is used for logical indexing.
-      const arrayFlag = this.getDataWithType(
-        dvhdr,
-        typeName,
-        currIndex - 1,
-        littleEndianData,
-      );
-      currIndex += typeSize;
-
-      // TODO: use flags for future implementation
-      const _complexFlag = arrayFlag & 0x80;
-      const _globalFlag = arrayFlag & 0x40;
-      const _logicalFlag = arrayFlag & 0x20;
-
-      // Find array class
-      const arrayClassNum = arrayFlag & 0xf;
-      const _arrayClassName = MatHeader.arrayClassNames[arrayClassNum];
-
-      // TODO: sparse array data format implementation: which uses next 4 bytes
-      //       Skip to next type field (array dimensions)
-      currIndex += typeSize;
-
-      // Dimensions type:
-      const dimTypeNum = dvhdr.getUint32(currIndex - 1, littleEndianData);
-      currIndex += 4;
-
-      const dimTypeName = MatHeader.dataTypeNames[dimTypeNum].name;
-      const dimTypeSize = MatHeader.dataTypeNames[dimTypeNum].size;
-
-      // Dimensions size:
-      const _arrayDimTotalSize = dvhdr.getUint32(
-        currIndex - 1,
-        littleEndianData,
-      );
-      currIndex += 4;
-
-      // Get number of rows
-      const rows = this.getDataWithType(
-        dvhdr,
-        dimTypeName,
-        currIndex - 1,
-        littleEndianData,
-      );
-      currIndex += dimTypeSize;
-
-      // TODO: support for >= 2D array types
-      if (rows > 1) {
-        console.warn('Only 1D arrays are currently supported.');
-      }
-
-      // Get number of columns
-      const _cols = this.getDataWithType(
-        dvhdr,
-        dimTypeName,
-        currIndex - 1,
-        littleEndianData,
-      );
-      currIndex += typeSize;
-
-      // array name type
-      let arrayNameTypeNum = dvhdr.getUint32(currIndex - 1, littleEndianData);
-      currIndex += 4;
-
-      let nameSize = 0;
-      let small = false;
-      if (arrayNameTypeNum > 15) {
-        arrayNameTypeNum &= 0x00ff;
-        small = true;
-        nameSize = dvhdr.getUint16(currIndex - 5, littleEndianData);
-      }
-
-      const arrayNameTypeName = MatHeader.dataTypeNames[arrayNameTypeNum].name;
-      const _arrayNameTypeSize = MatHeader.dataTypeNames[arrayNameTypeNum].size;
-
-      if (!small) {
-        nameSize = this.getDataWithType(
-          dvhdr,
-          arrayNameTypeName,
-          currIndex - 1,
-          littleEndianData,
+      if (this.version === 0x0200) {
+        throw new Error(
+          'MAT-file v7.3 (HDF5) is not supported; save the MAT-file with -v6',
         );
-        currIndex += 4;
       }
 
-      // Pad to end of 64 bit word if necessary
-      // If small, we will pad from the middle to the end of a 64 bit word;
-      // Otherwise, pat from start of a new word
-      const rndUp = small ? (4 - (nameSize % 4)) % 4 : (8 - (nameSize % 8)) % 8;
-
-      const jumpTo = nameSize + rndUp;
-      currIndex += jumpTo;
-
-      // set the data field in the header
-      this.setData(this.buf, dvhdr, currIndex, littleEndianData);
+      const element = MatHeader._readTag(
+        dvhdr,
+        MatHeader.firstDataTypeOffsetBegin - 1,
+        littleEndian,
+      );
+      this.dataType = element.type;
+      this.dataTypeName = MatHeader._dataType(element.type).name;
+      this.arraySize = element.nbytes;
+      if (this.dataTypeName === 'miCOMPRESSED') {
+        throw new Error(
+          'miCOMPRESSED data (MAT-file v7) is not supported; save the MAT-file with -v6',
+        );
+      }
+      if (this.dataTypeName !== 'miMATRIX') {
+        throw new Error(`Expected miMATRIX data, found ${this.dataTypeName}`);
+      }
+      this._readMatrix(dvhdr, element.data, littleEndian);
     }
+  }
+
+  /**
+   * Reads the tag of the data element at `offset`. In the small data
+   * element format, the byte count and type share one 4-byte word and the
+   * data follows in the next 4 bytes.
+   *
+   * @memberOf MatHeader
+   * @private
+   * @returns {{type: number, nbytes: number, data: number, next: number}}
+   *   the data type, byte count, data offset, and offset of the next element
+   */
+  static _readTag(dv, offset, littleEndian) {
+    const word = dv.getUint32(offset, littleEndian);
+    const smallBytes = word >>> 16;
+    if (smallBytes) {
+      return {
+        type: word & 0xffff,
+        nbytes: smallBytes,
+        data: offset + 4,
+        next: offset + 8,
+      };
+    }
+    const nbytes = dv.getUint32(offset + 4, littleEndian);
+    return {
+      type: word,
+      nbytes: nbytes,
+      data: offset + 8,
+      next: offset + 8 + Math.ceil(nbytes / 8) * 8,
+    };
+  }
+
+  /**
+   * @memberOf MatHeader
+   * @private
+   */
+  static _dataType(type) {
+    const dataType = MatHeader.dataTypeNames[type];
+    if (dataType === undefined) {
+      throw new Error(`Unknown MAT data type ${type}`);
+    }
+    return dataType;
+  }
+
+  /**
+   * Parses the subelements of the miMATRIX element whose data starts at
+   * `offset`: array flags, dimensions, name, then the values.
+   *
+   * @memberOf MatHeader
+   * @private
+   */
+  _readMatrix(dv, offset, littleEndian) {
+    let tag = MatHeader._readTag(dv, offset, littleEndian);
+    const flags = dv.getUint32(tag.data, littleEndian);
+    this.arrayClassName = MatHeader.arrayClassNames[flags & 0xff];
+    if (this.arrayClassName === undefined) {
+      throw new Error(`Unknown MAT array class ${flags & 0xff}`);
+    }
+    this.complex = (flags & 0x0800) !== 0;
+    this.global = (flags & 0x0400) !== 0;
+    this.logical = (flags & 0x0200) !== 0;
+
+    tag = MatHeader._readTag(dv, tag.next, littleEndian);
+    this.dims = Array.prototype.slice.call(
+      this._readValues(dv, tag, littleEndian, Int32Array),
+    );
+
+    tag = MatHeader._readTag(dv, tag.next, littleEndian);
+    this.arrayName = ab2str(this.buf.slice(tag.data, tag.data + tag.nbytes));
+
+    if (this.arrayClassName === 'mxSPARSE_CLASS') {
+      this._readSparse(dv, tag.next, littleEndian);
+      return;
+    }
+
+    const Values = MatHeader._CLASS_TO_TYPEDARRAY[this.arrayClassName];
+    if (Values === undefined && this.arrayClassName !== 'mxCHAR_CLASS') {
+      throw new Error(`${this.arrayClassName} arrays are not supported`);
+    }
+    tag = MatHeader._readTag(dv, tag.next, littleEndian);
+    this.dview = this._readValues(dv, tag, littleEndian, Values);
+    if (this.complex) {
+      tag = MatHeader._readTag(dv, tag.next, littleEndian);
+      this.dviewImag = this._readValues(dv, tag, littleEndian, Values);
+    }
+  }
+
+  /**
+   * Reads a sparse array (row indices, column offsets, then values) and
+   * expands it into dense column-major arrays.
+   *
+   * @memberOf MatHeader
+   * @private
+   */
+  _readSparse(dv, offset, littleEndian) {
+    const rows = this.dims[0];
+    const cols = this.dims[1];
+    const Values = this.logical ? Uint8Array : Float64Array;
+
+    let tag = MatHeader._readTag(dv, offset, littleEndian);
+    const ir = this._readValues(dv, tag, littleEndian, Int32Array);
+    tag = MatHeader._readTag(dv, tag.next, littleEndian);
+    const jc = this._readValues(dv, tag, littleEndian, Int32Array);
+    // Column `col` holds values jc[col] .. jc[col + 1] - 1, at rows ir[k]
+    const densify = (values) => {
+      const dense = new Values(rows * cols);
+      for (let col = 0; col < cols; col++) {
+        for (let k = jc[col]; k < jc[col + 1]; k++) {
+          dense[ir[k] + col * rows] = values[k];
+        }
+      }
+      return dense;
+    };
+
+    tag = MatHeader._readTag(dv, tag.next, littleEndian);
+    this.dview = densify(this._readValues(dv, tag, littleEndian, Values));
+    if (this.complex) {
+      tag = MatHeader._readTag(dv, tag.next, littleEndian);
+      this.dviewImag = densify(this._readValues(dv, tag, littleEndian, Values));
+    }
+  }
+
+  /**
+   * Reads the values of a numeric data element, converting them to
+   * `Values` when given and MATLAB stored them in a different type.
+   *
+   * @memberOf MatHeader
+   * @private
+   */
+  _readValues(dv, tag, littleEndian, Values) {
+    const dataType = MatHeader._dataType(tag.type);
+    if (dataType.size === null) {
+      throw new Error(`Expected numeric data, found ${dataType.name}`);
+    }
+    const count = tag.nbytes / dataType.size;
+    if (MatHeader._MAT_TO_TYPEDARRAY[dataType.name] === undefined) {
+      // 64-bit integers
+      const values = new (Values || Float64Array)(count);
+      for (let i = 0; i < count; i++) {
+        values[i] = this.getDataWithType(
+          dv,
+          dataType.name,
+          tag.data + i * dataType.size,
+          littleEndian,
+        );
+      }
+      return values;
+    }
+    const values = this.createArray(
+      dv.buffer,
+      tag.data,
+      count,
+      dataType.name,
+      littleEndian,
+    );
+    if (Values === undefined || values instanceof Values) {
+      return values;
+    }
+    const converted = new Values(count);
+    converted.set(values);
+    return converted;
   }
 
   /**
@@ -396,25 +497,41 @@ class MatHeader {
    * @memberOf MatHeader
    * @private
    * @param {ArrayBuffer | Array} buf -
-   * @param {number} offset -
-   * @param {number} length -
-   * @param {string} type -
+   * @param {number} offset - byte offset of the first value
+   * @param {number} length - number of values; defaults to the rest of buf
+   * @param {string} type - MAT data type name, e.g. 'miDOUBLE'
+   * @param {boolean} [littleEndian] - byte order of the data; defaults to the host's
    */
-  createArray(buf, offset, length, type) {
-    // TODO: big endian implemenation
+  createArray(buf, offset, length, type, littleEndian) {
     const TypedArray = MatHeader._MAT_TO_TYPEDARRAY[type];
     if (TypedArray === undefined) {
       throw `unknown type ${type}`;
     }
+    const size = TypedArray.BYTES_PER_ELEMENT;
 
     if (offset === undefined) {
       offset = 0;
     }
 
     if (length === undefined) {
-      length = buf.length; // TODO: Add `|| buf.byteLength / BPS;`
+      length =
+        buf.byteLength !== undefined
+          ? (buf.byteLength - offset) / size
+          : buf.length;
     }
 
+    const hostLittleEndian = MatHeader.ARRAY_BUFFER_ENDIANNESS === 'LE';
+    if (
+      littleEndian !== undefined &&
+      littleEndian !== hostLittleEndian &&
+      size > 1
+    ) {
+      return new TypedArray(swapBytes(buf, offset, length, size));
+    }
+    if (offset % size !== 0) {
+      // Typed array views must be aligned to their element size
+      return new TypedArray(buf.slice(offset, offset + length * size));
+    }
     return new TypedArray(buf, offset, length);
   }
 
@@ -432,10 +549,14 @@ class MatHeader {
     if (typeFunc === undefined) {
       throw `Type name ${typeName} is not supported`;
     }
+    if (typeof typeFunc === 'function') {
+      return typeFunc(dv, offset, littleEndian);
+    }
     return dv[typeFunc](offset, littleEndian);
   }
 
   /**
+   * Reads the numeric data element at the 1-based `currIndex` into dview.
    *
    * @memberOf MatHeader
    * @param   buf
@@ -444,38 +565,8 @@ class MatHeader {
    * @param   littleEndian
    */
   setData(buf, dvhdr, currIndex, littleEndian) {
-    let arrayValSize;
-
-    // Array value(s) type:
-    let typeNum = dvhdr.getUint32(currIndex - 1, littleEndian);
-
-    // Check for MATLAB "small element type"
-    let small = false;
-    if (typeNum > 15) {
-      typeNum &= 0x00ff;
-      small = true;
-      arrayValSize = dvhdr.getUint16(currIndex + 1, 2, littleEndian);
-    } else {
-      currIndex += 4;
-    }
-
-    const typeName = MatHeader.dataTypeNames[typeNum].name;
-    const typeSize = MatHeader.dataTypeNames[typeNum].size;
-
-    if (!small) {
-      arrayValSize = dvhdr.getUint32(currIndex - 1, littleEndian);
-      small = false;
-    }
-
-    currIndex += 4;
-
-    // Get JS array from MATLAB array
-    this.dview = this.createArray(
-      buf,
-      currIndex - 1,
-      arrayValSize / typeSize,
-      typeName,
-    );
+    const tag = MatHeader._readTag(dvhdr, currIndex - 1, littleEndian);
+    this.dview = this._readValues(dvhdr, tag, littleEndian);
   }
 }
 

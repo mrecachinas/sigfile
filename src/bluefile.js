@@ -24,7 +24,7 @@
  */
 import BitArray from './bitarray';
 import { BaseFileReader } from './basefilereader';
-import { endianness, ab2str, getInt64 } from './util';
+import { endianness, ab2str, getInt64, swapBytes } from './util';
 
 /**
  * Bluefiles are a binary format directly supported by SigPlot.  A Bluefile consists of a 512-byte header
@@ -303,19 +303,20 @@ class BlueHeader {
 
     this.bpe = this.ape * this.bpa;
 
-    // TODO handle mismatch between host and data endianness using arrayBufferEndianness
-    const arrayBufferLittleEndian = BlueHeader.ARRAY_BUFFER_ENDIANNESS === 'LE';
-    const arrayBufferBigEndian = BlueHeader.ARRAY_BUFFER_ENDIANNESS === 'BE';
-    if (
-      (arrayBufferLittleEndian && !littleEndian) ||
-      (arrayBufferBigEndian && this.littleEndianData)
-    ) {
-      throw `Not supported ${BlueHeader.ARRAY_BUFFER_ENDIANNESS} ${littleEndian}`;
-    }
+    // Data written in the other byte order is copied and byte-swapped;
+    // host-order data is viewed in place without copying.
+    const hostLittleEndian = BlueHeader.ARRAY_BUFFER_ENDIANNESS === 'LE';
+    const swap = littleEndian !== hostLittleEndian && this.bps > 1;
     if (buf) {
       if (offset && data_end && offset < buf.byteLength) {
         const length = (data_end - offset) / this.bps;
-        this.dview = this.createArray(buf, offset, length);
+        this.dview = swap
+          ? this.createArray(
+              swapBytes(buf, offset, length, this.bps),
+              0,
+              length,
+            )
+          : this.createArray(buf, offset, length);
         this.size = this.dview.length / (this.spa * this.ape);
       } else if (!offset) {
         this.dview = this.createArray(buf);

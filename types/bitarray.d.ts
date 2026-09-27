@@ -3,7 +3,7 @@ export default class BitArray {
   u8: Uint8Array;
   readonly length: number;
 
-  constructor(buf: ArrayBuffer | number);
+  constructor(buf: ArrayBuffer | number, byteOffset?: number, length?: number);
 
   getBit(idx: number): 0 | 1;
   setBit(idx: number, val: number): void;
