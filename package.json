@@ -51,8 +51,11 @@
     "./dist/*": "./dist/*",
     "./package.json": "./package.json"
   },
-  "engines": {
-    "node": ">=22"
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": ">=22"
+    }
   },
   "files": [
     "dist",
@@ -105,13 +108,14 @@
   "scripts": {
     "build:prod": "npm run clean && npx rollup -c --environment NODE_ENV:production",
     "build:dev": "npm run clean && npx rollup -c",
+    "check:dist": "npx eslint -c eslint.dist.config.mjs dist",
     "clean": "rm -rf ./dist",
     "eslint": "npx eslint . --fix",
     "eslint:check": "npx eslint .",
     "generate-docs": "rm -rf ./doc/; npx jsdoc --configure .jsdoc.json --verbose",
     "lint": "npm run prettier && npm run eslint",
     "lint:check": "npm run prettier:check && npm run eslint:check",
-    "prepack": "npm run build:prod",
+    "prepack": "npm run build:prod && npm run check:dist",
     "prettier": "npx prettier --ignore-path .gitignore --write \"**/*{.js,.mjs,.css,.json}\"",
     "prettier:check": "npx prettier --check --ignore-path .gitignore \"**/*{.js,.mjs,.css,.json}\"",
     "test": "vitest run",
@@ -119,7 +123,10 @@
     "typecheck": "tsc"
   },
   "devDependencies": {
+    "@babel/core": "^7.29.7",
+    "@babel/preset-env": "^7.29.7",
     "@eslint/js": "^9.0.0",
+    "@rollup/plugin-babel": "^6.1.0",
     "@rollup/plugin-json": "^6.0.0",
     "@rollup/plugin-terser": "^1.0.0",
     "@vitest/coverage-v8": "^4.1.11",
@@ -128,6 +135,7 @@
     "eslint-config-prettier": "^9.0.0",
     "globals": "^15.0.0",
     "jsdoc": "^4.0.5",
+    "jsdom": "^29.1.1",
     "prettier": "^3.0.0",
     "rollup": "^4.0.0",
     "typescript": "^5.9.3",

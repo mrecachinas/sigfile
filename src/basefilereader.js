@@ -89,35 +89,43 @@ class BaseFileReader {
   }
 
   /**
-   * Read a Bluefile or Matfile from a URL. Calling `abort()` on the
-   * returned controller cancels the request, and onload is not called.
+   * Read a Bluefile or Matfile from a URL, including file:// URLs where
+   * the environment allows XMLHttpRequest to read them. Calling `abort()`
+   * on the returned request calls onload with an error named 'AbortError'.
    *
    * @memberof BaseFileReader
    * @param {string} href - the URL for the Bluefile or Matfile
    * @param {onload} onload - callback when the header has been read
-   * @returns {AbortController} controller that can be used to abort the request via .abort()
+   * @returns {XMLHttpRequest} the in-flight request
    */
   read_http(href, onload) {
-    const controller = new AbortController();
-    const { signal } = controller;
-    fetch(href, { signal })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status} fetching ${href}`);
-        }
-        return response.arrayBuffer();
-      })
-      .then(
-        (buf) => {
-          if (signal.aborted) return;
-          this._parse(buf, onload, { file_name: parseURL(href).file });
-        },
-        (err) => {
-          if (signal.aborted) return;
-          onload(null, err);
-        },
-      );
-    return controller;
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', href, true);
+    xhr.responseType = 'arraybuffer';
+    xhr.onload = () => {
+      // file:// URLs report success with status 0
+      if ((xhr.status === 200 || xhr.status === 0) && xhr.response) {
+        this._parse(xhr.response, onload, { file_name: parseURL(href).file });
+      } else {
+        onload(null, new Error(`Failed to load ${href} (HTTP ${xhr.status})`));
+      }
+    };
+    xhr.onerror = () => {
+      onload(null, new Error(`Network error loading ${href}`));
+    };
+    // Callers can set xhr.timeout on the returned request
+    xhr.ontimeout = () => {
+      const err = new Error(`Timed out loading ${href}`);
+      err.name = 'TimeoutError';
+      onload(null, err);
+    };
+    xhr.onabort = () => {
+      const err = new Error(`Request aborted: ${href}`);
+      err.name = 'AbortError';
+      onload(null, err);
+    };
+    xhr.send();
+    return xhr;
   }
 }
 

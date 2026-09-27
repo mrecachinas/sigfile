@@ -7,7 +7,7 @@ import { MatFileReader, MatHeader } from 'sigfile/matfile';
 const v: string = version;
 
 const bfr: BlueFileReader = new bluefile.BlueFileReader({ ext_header_type: 'list' });
-const controller: AbortController = bfr.read_http('x.tmp', (hdr, err) => {
+const xhr: XMLHttpRequest = bfr.read_http('x.tmp', (hdr, err) => {
   if (hdr === null) {
     const e: unknown = err;
     return;
@@ -17,7 +17,7 @@ const controller: AbortController = bfr.read_http('x.tmp', (hdr, err) => {
   // @ts-expect-error dview is undefined after readheader()
   const len: number = h.dview.length;
 });
-controller.abort();
+xhr.abort();
 
 const mfr: MatFileReader = new matfile.MatFileReader();
 mfr.read(new Blob([]), (hdr) => {

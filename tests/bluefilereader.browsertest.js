@@ -1,4 +1,7 @@
+// @vitest-environment jsdom
 import { bluefile } from '../src/index';
+import { pathToFileURL } from 'node:url';
+import { readArrayBuffer, DATA_DIR } from './helpers';
 
 const BASE_URL = 'http://127.0.0.1:3000/tests/dat';
 
@@ -13,6 +16,12 @@ describe('bluefile.BlueFileReader', () => {
     });
     expect(hdr).to.be.null;
   });
+  it('should return the XMLHttpRequest', () => {
+    const bfr = new bluefile.BlueFileReader();
+    const xhr = bfr.read_http(`${BASE_URL}/sin.tmp`, () => {});
+    expect(xhr).to.be.instanceOf(XMLHttpRequest);
+    xhr.abort();
+  });
   it('should pass HTTP errors to onload', async () => {
     const bfr = new bluefile.BlueFileReader();
     const [hdr, err] = await new Promise((resolve) => {
@@ -21,12 +30,99 @@ describe('bluefile.BlueFileReader', () => {
     expect(hdr).to.be.null;
     expect(err.message).to.contain('HTTP 404');
   });
-  it('should not call onload after abort', async () => {
+  it('should pass network errors to onload', async () => {
+    const bfr = new bluefile.BlueFileReader();
+    const [hdr, err] = await new Promise((resolve) => {
+      // Port 1 is reserved and nothing listens on it
+      bfr.read_http('http://127.0.0.1:1/sin.tmp', (...args) => resolve(args));
+    });
+    expect(hdr).to.be.null;
+    expect(err.message).to.contain('Network error');
+  });
+  it('should call onload once with an AbortError after abort', async () => {
     const bfr = new bluefile.BlueFileReader();
     const onload = vi.fn();
     bfr.read_http(`${BASE_URL}/sin.tmp`, onload).abort();
     await new Promise((resolve) => setTimeout(resolve, 100));
-    expect(onload).not.toHaveBeenCalled();
+    expect(onload).toHaveBeenCalledTimes(1);
+    const [hdr, err] = onload.mock.calls[0];
+    expect(hdr).to.be.null;
+    expect(err.name).to.equal('AbortError');
+  });
+  it('should call onload once with a TimeoutError after a timeout', async () => {
+    vi.stubGlobal(
+      'XMLHttpRequest',
+      class {
+        open() {}
+        send() {
+          setTimeout(() => this.ontimeout());
+        }
+      },
+    );
+    try {
+      const [hdr, err] = await new Promise((resolve) => {
+        new bluefile.BlueFileReader().read_http(
+          `${BASE_URL}/sin.tmp`,
+          (...args) => resolve(args),
+        );
+      });
+      expect(hdr).to.be.null;
+      expect(err.name).to.equal('TimeoutError');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+  it('should call onload once and report errors it throws', async () => {
+    const onload = vi.fn(() => {
+      throw new Error('boom');
+    });
+    const error = await new Promise((resolve) => {
+      window.addEventListener(
+        'error',
+        (e) => {
+          e.preventDefault();
+          resolve(e.error);
+        },
+        { once: true },
+      );
+      new bluefile.BlueFileReader().read_http(`${BASE_URL}/sin.tmp`, onload);
+    });
+    expect(error.message).to.equal('boom');
+    expect(onload).toHaveBeenCalledTimes(1);
+  });
+  it('should read file:// URLs', async () => {
+    const url = pathToFileURL(`${DATA_DIR}/sin.tmp`).href;
+    const hdr = await new Promise((resolve) => {
+      new bluefile.BlueFileReader().read_http(url, resolve);
+    });
+    expect(hdr.file_name).to.equal('sin.tmp');
+    expect(hdr.size).to.equal(4096);
+  });
+  it('should treat status 0 as success, as browsers do for file:// URLs', async () => {
+    const response = await readArrayBuffer('sin.tmp');
+    vi.stubGlobal(
+      'XMLHttpRequest',
+      class {
+        open() {}
+        send() {
+          this.status = 0;
+          this.response = response;
+          setTimeout(() => this.onload());
+        }
+      },
+    );
+    try {
+      const hdr = await new Promise((resolve) => {
+        new bluefile.BlueFileReader().read_http(
+          'file:///data/sin.tmp',
+          resolve,
+        );
+      });
+      expect(hdr.file_name).to.equal('sin.tmp');
+      expect(hdr.size).to.equal(4096);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
   it('should parse type 1000 double data', async () => {
     const bfr = new bluefile.BlueFileReader();

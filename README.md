@@ -49,32 +49,37 @@ fs.readFile('./tests/dat/ramp.tmp', function(err, buf) {
 import { bluefile } from 'sigfile';
 
 const reader = new bluefile.BlueFileReader();
-const request = reader.read_http('https://example.com/data.tmp', (header, err) => {
+const xhr = reader.read_http('https://example.com/data.tmp', (header, err) => {
     if (!header) {
-        console.error('Failed to load bluefile', err);
+        if (err.name !== 'AbortError') {
+            console.error('Failed to load bluefile', err);
+        }
         return;
     }
     console.log(header.type, header.format, header.dview);
 });
 
-// request.abort() cancels the download; the callback is then not called.
+// xhr.abort() cancels the download; the callback then receives an
+// error named 'AbortError', so cleanup code still runs.
 ```
+
+`read_http` uses `XMLHttpRequest`, so it works in browsers, Electron, and
+jsdom, including `file://` URLs where the environment allows them. It isn't
+available in plain Node.js; there, read the file yourself and pass the
+`ArrayBuffer` to `BlueHeader` as shown above.
 
 `read(file, onload)` and `readheader(file, onload)` work the same way for
 local `File` or `Blob` objects. `readheader` loads only the first 512 bytes,
 so `header.size` is set but `header.dview` is undefined.
 
+Once a read starts, `onload` is called exactly once.
+
 ## Upgrading from 0.1.x
 
-- The builds use modern JavaScript (ES2022: class fields, optional catch
-  binding) and are no longer transpiled to ES5. Old browsers and bundlers that
-  can't parse ES2022, such as webpack 4, need to transpile `sigfile` themselves.
 - `package.json` now has an `exports` map. The supported entry points are
   `sigfile`, `sigfile/bluefile`, `sigfile/matfile`, `sigfile/dist/*`, and
   `sigfile/package.json`.
-- `read_http` uses `fetch` instead of `XMLHttpRequest`:
-  - It returns an `AbortController` instead of the `XMLHttpRequest`.
-  - `file://` URLs are no longer supported.
 - On failure, `onload` receives `null` plus the error as a second argument.
-  Parse errors are reported this way instead of being thrown.
-- The minimum supported Node.js version is 22.
+  This includes parse errors, which 0.1.x threw from inside the load handler,
+  aborted requests (`err.name === 'AbortError'`), and timeouts
+  (`'TimeoutError'`). 0.1.x never reported aborts or timeouts.

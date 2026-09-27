@@ -22,10 +22,11 @@ export declare class BaseFileReader<T> {
   readheader(theFile: File | Blob, onload: (hdr: T | null, err?: unknown) => void): void;
 
   /**
-   * Read a file from a URL via fetch.
-   * @param href - the URL to fetch
+   * Read a file from a URL via XMLHttpRequest, including file:// URLs where
+   * the environment allows it.
+   * @param href - the URL to load
    * @param onload - callback receiving the parsed header, or null and the error on failure
-   * @returns an AbortController; after abort(), onload is not called
+   * @returns the request; after abort(), onload receives an error named 'AbortError'
    */
-  read_http(href: string, onload: (hdr: T | null, err?: unknown) => void): AbortController;
+  read_http(href: string, onload: (hdr: T | null, err?: unknown) => void): XMLHttpRequest;
 }
