@@ -2,14 +2,13 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    include: ["tests/**/*.test.js", "tests/**/*.browsertest.js"],
-    environment: "node",
+    include: ["tests/**/*.{test,nodetest,browsertest}.js"],
     globals: true,
-    globalSetup: "./tests/browser-setup.js",
+    globalSetup: "./tests/http-server-setup.js",
     coverage: {
       provider: "v8",
       include: ["src/**/*.js"],
-      reportsDirectory: "./coverage",
+      reporter: ["text", "lcov"],
     },
   },
 });

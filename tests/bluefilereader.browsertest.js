@@ -1,6 +1,6 @@
 import { bluefile } from '../src/index';
 
-const BASE_URL = 'http://localhost:3000/tests/dat';
+const BASE_URL = 'http://127.0.0.1:3000/tests/dat';
 
 describe('bluefile.BlueFileReader', () => {
   beforeEach(() => {
@@ -12,6 +12,21 @@ describe('bluefile.BlueFileReader', () => {
       bfr.read_http('foo/bar/baz', resolve);
     });
     expect(hdr).to.be.null;
+  });
+  it('should pass HTTP errors to onload', async () => {
+    const bfr = new bluefile.BlueFileReader();
+    const [hdr, err] = await new Promise((resolve) => {
+      bfr.read_http(`${BASE_URL}/missing.tmp`, (...args) => resolve(args));
+    });
+    expect(hdr).to.be.null;
+    expect(err.message).to.contain('HTTP 404');
+  });
+  it('should not call onload after abort', async () => {
+    const bfr = new bluefile.BlueFileReader();
+    const onload = vi.fn();
+    bfr.read_http(`${BASE_URL}/sin.tmp`, onload).abort();
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(onload).not.toHaveBeenCalled();
   });
   it('should parse type 1000 double data', async () => {
     const bfr = new bluefile.BlueFileReader();

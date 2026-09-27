@@ -1,29 +1,37 @@
-import resolve from "@rollup/plugin-node-resolve";
 import json from "@rollup/plugin-json";
 import terser from "@rollup/plugin-terser";
 
-const entries = [
-  { input: "src/index.js", name: "sigfile", file: "dist/sigfile.js" },
-  { input: "src/bluefile.js", name: "bluefile", file: "dist/bluefile.js" },
-  { input: "src/matfile.js", name: "matfile", file: "dist/matfile.js" },
+const entries = {
+  sigfile: "src/index.js",
+  bluefile: "src/bluefile.js",
+  matfile: "src/matfile.js",
+};
+
+const plugins = [
+  json(),
+  process.env.NODE_ENV === "production" && terser(),
+].filter(Boolean);
+
+const chunked = (format, ext) => ({
+  dir: "dist",
+  format,
+  entryFileNames: `[name].${ext}`,
+  chunkFileNames: `chunks/[name]-[hash].${ext}`,
+  sourcemap: true,
+});
+
+export default [
+  // ESM and CJS builds share chunks, so `sigfile` and `sigfile/bluefile`
+  // expose the same class instances.
+  {
+    input: entries,
+    output: [chunked("es", "mjs"), chunked("cjs", "cjs")],
+    plugins,
+  },
+  // Standalone UMD bundles for <script> tags and legacy `main` consumers.
+  ...Object.entries(entries).map(([name, input]) => ({
+    input,
+    output: { file: `dist/${name}.js`, format: "umd", name, sourcemap: true },
+    plugins,
+  })),
 ];
-
-const isProduction = process.env.NODE_ENV === "production";
-
-export default entries.map(({ input, name, file }) => ({
-  input,
-  output: [
-    {
-      file,
-      format: "umd",
-      name,
-      sourcemap: true,
-    },
-    {
-      file: file.replace(".js", ".mjs"),
-      format: "es",
-      sourcemap: true,
-    },
-  ],
-  plugins: [resolve(), json(), isProduction && terser()].filter(Boolean),
-}));

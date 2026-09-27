@@ -2,30 +2,57 @@
   "name": "sigfile",
   "description": "Utilities to reading signal data from files",
   "license": "Apache-2.0",
-  "version": "0.1.9",
+  "version": "0.2.0",
   "homepage": "https://lgsinnovations.github.io/sigfile",
   "main": "dist/sigfile.js",
   "module": "dist/sigfile.mjs",
   "types": "types/sigfile.d.ts",
-  "exports": {
-    ".": {
-      "types": "./types/sigfile.d.ts",
-      "import": "./dist/sigfile.mjs",
-      "require": "./dist/sigfile.js"
-    },
-    "./bluefile": {
-      "types": "./types/bluefile.d.ts",
-      "import": "./dist/bluefile.mjs",
-      "require": "./dist/bluefile.js"
-    },
-    "./matfile": {
-      "types": "./types/matfile.d.ts",
-      "import": "./dist/matfile.mjs",
-      "require": "./dist/matfile.js"
+  "typesVersions": {
+    "*": {
+      "bluefile": [
+        "./types/bluefile.d.ts"
+      ],
+      "matfile": [
+        "./types/matfile.d.ts"
+      ]
     }
   },
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./types/sigfile.d.mts",
+        "default": "./dist/sigfile.mjs"
+      },
+      "require": {
+        "types": "./types/sigfile.d.ts",
+        "default": "./dist/sigfile.cjs"
+      }
+    },
+    "./bluefile": {
+      "import": {
+        "types": "./types/bluefile.d.mts",
+        "default": "./dist/bluefile.mjs"
+      },
+      "require": {
+        "types": "./types/bluefile.d.ts",
+        "default": "./dist/bluefile.cjs"
+      }
+    },
+    "./matfile": {
+      "import": {
+        "types": "./types/matfile.d.mts",
+        "default": "./dist/matfile.mjs"
+      },
+      "require": {
+        "types": "./types/matfile.d.ts",
+        "default": "./dist/matfile.cjs"
+      }
+    },
+    "./dist/*": "./dist/*",
+    "./package.json": "./package.json"
+  },
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   },
   "files": [
     "dist",
@@ -76,34 +103,34 @@
     ]
   },
   "scripts": {
-    "build:prod": "npm run clean && npm run lint && npx rollup -c --environment NODE_ENV:production",
-    "build:dev": "npm run clean && npm run lint && npx rollup -c",
+    "build:prod": "npm run clean && npx rollup -c --environment NODE_ENV:production",
+    "build:dev": "npm run clean && npx rollup -c",
     "clean": "rm -rf ./dist",
     "eslint": "npx eslint . --fix",
     "eslint:check": "npx eslint .",
     "generate-docs": "rm -rf ./doc/; npx jsdoc --configure .jsdoc.json --verbose",
     "lint": "npm run prettier && npm run eslint",
+    "lint:check": "npm run prettier:check && npm run eslint:check",
+    "prepack": "npm run build:prod",
     "prettier": "npx prettier --ignore-path .gitignore --write \"**/*{.js,.mjs,.css,.json}\"",
     "prettier:check": "npx prettier --check --ignore-path .gitignore \"**/*{.js,.mjs,.css,.json}\"",
-    "test:browser": "vitest run -c vitest.browser.config.mjs",
-    "test:node": "vitest run -c vitest.node.config.mjs",
-    "test": "npm run test:node && npm run test:browser",
-    "test:coverage": "vitest run -c vitest.node.config.mjs --coverage && vitest run -c vitest.browser.config.mjs --coverage"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc"
   },
-  "dependencies": {},
   "devDependencies": {
     "@eslint/js": "^9.0.0",
     "@rollup/plugin-json": "^6.0.0",
-    "@rollup/plugin-node-resolve": "^16.0.0",
-    "@rollup/plugin-terser": "^0.4.0",
-    "@vitest/coverage-v8": "^3.0.0",
+    "@rollup/plugin-terser": "^1.0.0",
+    "@vitest/coverage-v8": "^4.1.11",
+    "docdash": "^2.0.2",
     "eslint": "^9.0.0",
     "eslint-config-prettier": "^9.0.0",
     "globals": "^15.0.0",
-    "jsdoc": "^3.6.4",
-    "minami": "^1.2.3",
+    "jsdoc": "^4.0.5",
     "prettier": "^3.0.0",
     "rollup": "^4.0.0",
-    "vitest": "^3.0.0"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.11"
   }
 }

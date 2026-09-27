@@ -1,16 +1,9 @@
-import { readFile } from 'fs/promises';
-import { Blob } from 'node:buffer';
+import { readArrayBuffer, readBlob } from './helpers';
 import { MatHeader, MatFileReader } from '../src/matfile';
-
-const DATA_DIR = './tests/dat';
 
 describe('MatHeader', () => {
   it('should parse the mat-file header from buffer', async () => {
-    const data = await readFile(`${DATA_DIR}/sin.mat`);
-    const buf = data.buffer.slice(
-      data.byteOffset,
-      data.byteOffset + data.byteLength,
-    );
+    const buf = await readArrayBuffer('sin.mat');
     const hdr = new MatHeader(buf);
 
     expect(hdr.buf.byteLength).to.equal(16208);
@@ -23,11 +16,7 @@ describe('MatHeader', () => {
   });
 
   it('should extract sine wave data', async () => {
-    const data = await readFile(`${DATA_DIR}/sin.mat`);
-    const buf = data.buffer.slice(
-      data.byteOffset,
-      data.byteOffset + data.byteLength,
-    );
+    const buf = await readArrayBuffer('sin.mat');
     const hdr = new MatHeader(buf);
 
     expect(hdr.dview).to.not.be.undefined;
@@ -40,11 +29,7 @@ describe('MatHeader', () => {
   });
 
   it('should parse header metadata fields', async () => {
-    const data = await readFile(`${DATA_DIR}/sin.mat`);
-    const buf = data.buffer.slice(
-      data.byteOffset,
-      data.byteOffset + data.byteLength,
-    );
+    const buf = await readArrayBuffer('sin.mat');
     const hdr = new MatHeader(buf);
 
     expect(hdr.headerList).to.be.an('array');
@@ -68,9 +53,7 @@ describe('MatFileReader', () => {
   });
 
   it('should read a mat-file from a Blob', async () => {
-    const data = await readFile(`${DATA_DIR}/sin.mat`);
-    const blob = new Blob([data]);
-    blob.name = 'sin.mat';
+    const blob = await readBlob('sin.mat');
 
     const mfr = new MatFileReader();
     const hdr = await new Promise((resolve) => {

@@ -35,14 +35,16 @@ export declare class BlueHeader {
   ydelta: number | undefined;
   data_start: number;
   data_size: number;
-  ext_header: Record<string, unknown> | Array<{ tag: string; value: unknown }>;
+  /** Undefined when the file has no extended header. */
+  ext_header?: Record<string, unknown> | Array<{ tag: string; value: unknown }>;
   spa: number;
   bps: number;
   bpa: number;
   ape: number;
   bpe: number;
   size: number;
-  dview: TypedArray | BitArray;
+  /** Undefined after readheader(), which doesn't load the data. */
+  dview?: TypedArray | BitArray;
   file: File | Blob | undefined;
   file_name: string | undefined;
 

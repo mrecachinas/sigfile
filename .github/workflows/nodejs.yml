@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x, 22.x]
+        node-version: [22.x, 24.x]
         platform: [ubuntu-latest]
 
     steps:
@@ -21,10 +21,17 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
+          cache: npm
       - run: npm ci
-      - run: npm run build:prod --if-present
-      - run: npm test
+      - run: npm run lint:check
+      - run: npm run typecheck
+      - run: npm run build:prod
+      - run: npm run test:coverage
         env:
           CI: true
       - name: Upload coverage to Codecov
+        if: matrix.node-version == '24.x'
         uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/lcov.info

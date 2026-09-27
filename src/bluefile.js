@@ -320,6 +320,9 @@ class BlueHeader {
       } else if (!offset) {
         this.dview = this.createArray(buf);
         this.size = this.dview.length / (this.spa * this.ape);
+      } else {
+        // Header-only read: the data isn't in buf, so derive size from the header
+        this.size = this.data_size / this.bpe;
       }
     } else {
       this.dview = this.createArray(null, null, this.size);

@@ -1,15 +1,9 @@
-import { readFile } from 'fs/promises';
+import { readArrayBuffer } from './helpers';
 import { BlueHeader } from '../src/bluefile';
-
-const DATA_DIR = './tests/dat';
 
 describe('BlueHeader', () => {
   it('should load keywords correctly from buffer', async () => {
-    const data = await readFile(`${DATA_DIR}/keyword_test_file.tmp`);
-    const buf = data.buffer.slice(
-      data.byteOffset,
-      data.byteOffset + data.byteLength,
-    );
+    const buf = await readArrayBuffer('keyword_test_file.tmp');
     const hdr = new BlueHeader(buf, {});
     expect(hdr.type).to.equal(1000);
     expect(hdr.format).to.equal('SB');
@@ -36,11 +30,7 @@ describe('BlueHeader', () => {
     }
   });
   it('should load type 1000 SD data correctly from buffer', async () => {
-    const data = await readFile(`${DATA_DIR}/sin.tmp`);
-    const buf = data.buffer.slice(
-      data.byteOffset,
-      data.byteOffset + data.byteLength,
-    );
+    const buf = await readArrayBuffer('sin.tmp');
     const hdr = new BlueHeader(buf);
     expect(hdr.type).to.equal(1000);
     expect(hdr.format).to.equal('SD');
@@ -51,11 +41,7 @@ describe('BlueHeader', () => {
     expect(hdr.data_size).to.equal(32768);
   });
   it('should load type 2000 SD data correctly from buffer', async () => {
-    const data = await readFile(`${DATA_DIR}/penny.prm`);
-    const buf = data.buffer.slice(
-      data.byteOffset,
-      data.byteOffset + data.byteLength,
-    );
+    const buf = await readArrayBuffer('penny.prm');
     const hdr = new BlueHeader(buf);
     expect(hdr.type).to.equal(2000);
     expect(hdr.format).to.equal('SD');
@@ -66,11 +52,7 @@ describe('BlueHeader', () => {
     expect(hdr.data_size).to.equal(131072);
   });
   it('should parse scalar packed data from buffer', async () => {
-    const data = await readFile(`${DATA_DIR}/scalarpacked.tmp`);
-    const buf = data.buffer.slice(
-      data.byteOffset,
-      data.byteOffset + data.byteLength,
-    );
+    const buf = await readArrayBuffer('scalarpacked.tmp');
     const hdr = new BlueHeader(buf);
     expect(hdr.buf.byteLength).to.eql(1024);
     expect(hdr.dview.length).to.eql(8192);
@@ -106,11 +88,7 @@ describe('BlueHeader', () => {
     expect(hdr.dview.getBit(7)).to.eql(0);
   });
   it('should parse complex float data from buffer', async () => {
-    const data = await readFile(`${DATA_DIR}/pulse_cx.tmp`);
-    const buf = data.buffer.slice(
-      data.byteOffset,
-      data.byteOffset + data.byteLength,
-    );
+    const buf = await readArrayBuffer('pulse_cx.tmp');
     const hdr = new BlueHeader(buf);
     expect(hdr.buf.byteLength).to.equal(131584);
     expect(hdr.dview.length).to.equal(400);
@@ -138,11 +116,7 @@ describe('BlueHeader', () => {
     expect(hdr.data_size).to.equal(1600);
   });
   it('should parse bluefile int data from buffer', async () => {
-    const data = await readFile(`${DATA_DIR}/ramp.tmp`);
-    const buf = data.buffer.slice(
-      data.byteOffset,
-      data.byteOffset + data.byteLength,
-    );
+    const buf = await readArrayBuffer('ramp.tmp');
     const hdr = new BlueHeader(buf);
     expect(hdr.buf.byteLength).to.equal(2560);
     expect(hdr.dview.length).to.equal(1024);
