@@ -40,7 +40,8 @@ npm run lint:check && npm run typecheck && npm run build:prod && npm run check:d
 - `types/`: hand-written TypeScript declarations. The `*.d.ts` files serve
   CommonJS; each `*.d.mts` re-exports its `.d.ts` for ESM.
 - `tests/`: Vitest suites, `helpers.js`, the test HTTP server
-  (`http-server-setup.js`), type tests (`types.mts`), and fixtures (`dat/`).
+  (`http-server-setup.js`), type tests (`types.mts`), and fixtures (`dat/`,
+  including the MAT fixture generator `dat/make_mat_fixtures.py`).
 - `rollup.config.mjs` builds `dist/`. `eslint.dist.config.mjs` is the
   `check:dist` syntax check.
 - `dist/`, `doc/`, and `coverage/` are generated and gitignored. Don't commit
@@ -113,6 +114,38 @@ aborts (`err.name === 'AbortError'`), and timeouts (`'TimeoutError'`).
   `package.json`, check the packed tarball:
   `npm pack && npx @arethetypeswrong/cli sigfile-*.tgz`.
 
+## File formats
+
+### Bluefiles
+
+- The header (`headrep`) and data (`datarep`) can each be little-endian
+  (`EEEI`) or big-endian (`IEEE`).
+- `setData` views data in the host's byte order in place, and copies data in
+  the other order through `util.swapBytes`. Keep the host-order path
+  copy-free: SigPlot's streaming mode depends on it, and
+  `tests/blueheader.nodetest.js` checks both paths.
+- Packed-bit (`SP`) data is a `BitArray` covering only the data section:
+  `new BitArray(buf, byteOffset, length)`, with `length` in bits.
+
+### MAT-files
+
+- `MatHeader` parses the first variable in a Level 5 MAT-file. `_readTag`
+  reads a data element tag in either the normal or the small format.
+  `_readMatrix` reads an array's flags, dimensions, name, and values.
+  `_readSparse` expands sparse arrays to dense. `_readValues` converts stored
+  values to the array's MATLAB class, since MATLAB may store them in a
+  smaller type.
+- `dview` must stay a flat typed array of real values in column-major order,
+  because SigPlot plots it directly. Put new information in separate
+  properties, as `dims`, `dviewImag`, and the flags are.
+- Compressed (`miCOMPRESSED`, `save -v7`, MATLAB's default) and v7.3 (HDF5)
+  files throw an error by design. Supporting `-v7` would mean bundling a zlib
+  implementation, since the browser's `DecompressionStream` is asynchronous
+  and `new MatHeader(buf)` is not; we decided against adding that dependency.
+- 64-bit integers are read by `getInt64` and `getUint64` in `util.js` as two
+  32-bit halves, without `BigInt`. Values beyond 2^53 become `Infinity` or
+  `-Infinity`, with a console warning.
+
 ## Testing
 
 - Vitest runs with globals (`describe`, `it`, `expect`, `vi`). Assertions mix
@@ -128,6 +161,17 @@ aborts (`err.name === 'AbortError'`), and timeouts (`'TimeoutError'`).
   `EADDRINUSE`.
 - `tests/helpers.js` loads fixtures: `readArrayBuffer(name)` returns an
   `ArrayBuffer`, and `readFile(name)` returns a `File`, as a file input would.
+- MAT fixtures come from `python3 tests/dat/make_mat_fixtures.py`, run from
+  the repository root (needs numpy and scipy). Rerunning it rewrites every
+  fixture that scipy writes, because scipy puts the creation time in each
+  header, so commit only the fixtures you meant to change. `sin.mat` came from
+  MATLAB and isn't generated.
+- Big-endian fixtures aren't committed. `bluefileToBigEndian` and
+  `matToBigEndian` in `tests/helpers.js` convert the little-endian fixtures at
+  test time. The parser tests trust these converters, so if you change them,
+  check their output independently: `scipy.io.loadmat` must read a converted
+  MAT-file identically to the original, and a converted bluefile must match
+  the X-Midas header layout (documented in REDHAWK's `bluefile.py`).
 - jsdom drops errors thrown from `FileReader` event handlers, unlike browsers.
   To test that such an error propagates, stub `FileReader` with
   `vi.stubGlobal` and call its `onload` yourself (see
